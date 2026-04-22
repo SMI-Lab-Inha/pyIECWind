@@ -124,6 +124,7 @@ See [`examples/sample_case.ipt`](examples/sample_case.ipt) for a complete workin
 ## Documentation
 
 - [`QUICKSTART.md`](QUICKSTART.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
 - [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md)
 - [`docs/CASE_REFERENCE.md`](docs/CASE_REFERENCE.md)
