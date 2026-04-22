@@ -3,7 +3,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .core import IECParameters, VERSION, format_openfast_input, generate_from_input_file, write_template
+from .core import (
+    DEFAULT_INPUT_FILENAME,
+    DEFAULT_TEMPLATE_FILENAME,
+    IECParameters,
+    VERSION,
+    format_openfast_input,
+    generate_from_input_file,
+    write_template,
+)
 
 
 def _prompt_text(prompt: str, default: str) -> str:
@@ -150,16 +158,16 @@ def _run_wizard(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pyiecwind",
-        description="Generate IECWind .wnd files from an input file or guided wizard.",
+        description="Generate IEC wind-condition .wnd files from an input file or guided wizard.",
     )
     subparsers = parser.add_subparsers(dest="command")
 
     run_parser = subparsers.add_parser("run", help="Generate .wnd files from an .ipt file.")
-    run_parser.add_argument("input_file", nargs="?", default="IEC.IPT")
+    run_parser.add_argument("input_file", nargs="?", default=DEFAULT_INPUT_FILENAME)
     run_parser.add_argument("-o", "--output-dir", default=".")
 
     template_parser = subparsers.add_parser("template", help="Write a commented template input file.")
-    template_parser.add_argument("dest", nargs="?", default="IEC_template.ipt")
+    template_parser.add_argument("dest", nargs="?", default=DEFAULT_TEMPLATE_FILENAME)
 
     wizard_parser = subparsers.add_parser("wizard", help="Interactive case builder for non-expert users.")
     wizard_parser.add_argument("-o", "--output-dir", default=".")
@@ -173,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command is None:
-        params, count = generate_from_input_file("IEC.IPT", output_dir=".")
+        params, count = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".")
         print(params.summary())
         print(f"\nGenerated {count} wind file(s).")
         return 0

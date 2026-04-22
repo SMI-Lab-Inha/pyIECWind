@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pyiecwind"
 version = "0.1.0"
-description = "Modern Python packaging of IECWind for generating IEC .wnd files."
+description = "Modern Python package for legacy IECWind-style IEC wind-condition generation for OpenFAST InflowWind."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -13,13 +13,15 @@ dependencies = ["numpy>=1.24"]
 authors = [
   { name = "Jae Hoon Seo" }
 ]
-keywords = ["wind-energy", "openfast", "aerodyn", "iec", "iecwind"]
+keywords = ["wind-energy", "wind-turbine", "openfast", "inflowwind", "iec", "iecwind", "nrel", "legacy-iecwind"]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Environment :: Console",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Scientific/Engineering",
 ]
 
@@ -27,6 +29,7 @@ classifiers = [
 Homepage = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Repository = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Issues = "https://github.com/SMI-Lab-Inha/pyIECWind/issues"
+Documentation = "https://github.com/SMI-Lab-Inha/pyIECWind#readme"
 
 [project.scripts]
 pyiecwind = "pyiecwind.cli:main"

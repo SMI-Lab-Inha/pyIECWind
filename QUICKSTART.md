@@ -43,11 +43,22 @@ The recommended input format uses OpenFAST-style parameter rows and case-family 
 ```text
 True            si_unit      - True for SI (m, m/s), False for English (ft, ft/s)
 40.000          t1           - transient start time [s]
-ECD             True   [+R]  - Extreme Coherent Gust with Direction Change. Options: +R, -R, +R+du, ...
-NWP             True   [23.7] - Normal Wind Profile. Options: array of hub-height wind speeds in m/s
+ECD             True   [+R]       - Extreme Coherent Gust with Direction Change. Options: +R, -R, +R+du, ...
+NWP             True   [23.7]     - Normal Wind Profile. Options: array of hub-height wind speeds in m/s
 ```
 
 See [`examples/sample_case.ipt`](examples/sample_case.ipt) for a complete example.
+
+Default filenames:
+
+- `pyiecwind template` writes `pyiecwind_template.ipt`
+- `pyiecwind run` without an explicit file reads `pyiecwind.ipt`
+
+More detailed documentation:
+
+- [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+- [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md)
+- [`docs/CASE_REFERENCE.md`](docs/CASE_REFERENCE.md)
 
 ## 4. Check The Outputs
 

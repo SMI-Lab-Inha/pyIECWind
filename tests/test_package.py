@@ -3,12 +3,25 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from pyiecwind import DEFAULT_INPUT_FILENAME, DEFAULT_TEMPLATE_FILENAME
 from pyiecwind.core import format_openfast_input, generate_from_input_file, parse_input_file, write_template
 
 from helpers import WorkspaceTestCaseMixin
 
 
 class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
+    def test_repository_docs_exist(self) -> None:
+        root = Path.cwd()
+        expected = [
+            root / "README.md",
+            root / "QUICKSTART.md",
+            root / "docs" / "USER_GUIDE.md",
+            root / "docs" / "INPUT_FORMAT.md",
+            root / "docs" / "CASE_REFERENCE.md",
+            root / "docs" / "MIGRATION.md",
+        ]
+        for path in expected:
+            self.assertTrue(path.exists(), str(path))
 
     def test_template_writer_creates_file(self) -> None:
         tmp = self.workspace_tempdir()
@@ -21,6 +34,11 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
         self.assertIn("use_case", contents)
         self.assertIn("! Operating Speeds", contents)
         self.assertIn("options_array", contents)
+        self.assertIn("! EWM: Extreme Wind Model", contents)
+
+    def test_public_default_filenames_match_cleanup_conventions(self) -> None:
+        self.assertEqual(DEFAULT_INPUT_FILENAME, "pyiecwind.ipt")
+        self.assertEqual(DEFAULT_TEMPLATE_FILENAME, "pyiecwind_template.ipt")
 
     def test_generate_from_input_file_writes_outputs(self) -> None:
         tmp_path = self.workspace_tempdir()
