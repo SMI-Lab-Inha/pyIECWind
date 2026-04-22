@@ -1,6 +1,6 @@
 # pyIECWind
 
-`pyIECWind` is a modern Python packaging of the legacy NREL `IECWind` workflow for generating IEC extreme wind-condition files in AeroDyn/OpenFAST `.wnd` format.
+`pyIECWind` is a modern Python package for generating IEC extreme wind-condition files in AeroDyn/OpenFAST `.wnd` format.
 
 The project preserves the core IEC wind-condition logic while providing:
 
@@ -93,6 +93,7 @@ tests/                      automated test suite
 iec_wind.py                 backward-compatible wrapper
 pyproject.toml              package metadata
 environment.yml             conda environment definition
+src/README.md               package-internal overview
 ```
 
 ## Testing
@@ -123,4 +124,3 @@ GitHub Actions runs the same suite automatically on pushes and pull requests.
 
 - Internal calculations are performed in SI units.
 - `NWP` retains the legacy IECWind convention that the embedded speed is interpreted in `m/s`.
-- The original `IECwind.f90` source is retained in the repository for reference.

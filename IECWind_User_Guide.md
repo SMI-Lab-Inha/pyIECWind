@@ -23,14 +23,13 @@
 
 ## Overview
 
-`iec_wind.py` is a Python reimplementation and modernization of the legacy `IECwind.f90` utility. It generates IEC extreme wind condition files in AeroDyn `.wnd` format for use in wind turbine simulation workflows.
+`iec_wind.py` is a Python implementation of the IECWind workflow. It generates IEC extreme wind condition files in AeroDyn `.wnd` format for use in wind turbine simulation workflows.
 
 The script reads an input file, computes the requested IEC wind cases, and writes one `.wnd` file per condition code.
 
 This implementation is based on the logic in:
 
 - `iec_wind.py`
-- `IECwind.f90`
 
 The guide below is written to match the behavior of the current Python script as implemented in this directory.
 
@@ -93,7 +92,6 @@ conda install numpy
 Key files in the current working directory:
 
 - `iec_wind.py`: the Python implementation
-- `IECwind.f90`: the legacy Fortran implementation
 - `IEC.ipt`: the main input file
 - generated `.wnd` files: one per condition
 
@@ -139,7 +137,7 @@ python iec_wind.py --help
 
 The Python script supports two input styles:
 
-- the original legacy fixed-line format used by `IECwind.f90`
+- the original legacy fixed-line format used by historical IECWind inputs
 - a newer key/value format that is easier to read and edit
 
 Both formats are accepted by the same parser.
@@ -854,7 +852,7 @@ NWP23.7
 
 This is a special case.
 
-The embedded speed in the condition code is always interpreted as m/s, even when `si_unit = False`. This is not a typo in this guide. It is the current implemented behavior and intentionally matches the original Fortran logic.
+The embedded speed in the condition code is always interpreted as m/s, even when `si_unit = False`. This is not a typo in this guide. It is the current implemented behavior and intentionally matches historical IECWind behavior.
 
 #### Output
 
@@ -1076,7 +1074,7 @@ ERROR: Unknown condition type 'XXX' in code 'XXX...'. Skipping.
 
 ## Important Implementation Notes
 
-These points are especially important if you are comparing results to other IEC tools or to the original Fortran program.
+These points are especially important if you are comparing results to other IEC tools or to earlier IECWind-based workflows.
 
 ### 1. Internal Units Are Always SI
 

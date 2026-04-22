@@ -1,24 +1,4 @@
-"""
-IECWind (Python)
-================
-Generates IEC 61400-1 Ed.3 / IEC 61400-3 Ed.1 extreme wind condition
-files (.WND) compatible with AeroDyn.
-
-Translated from IECwind.f90 v5.01.02 (NREL/NWTC, Univ. of Utah /
-Windward Engineering).
-
-Usage
------
-    python iec_wind.py              # reads IEC.IPT in the current directory
-    python iec_wind.py myinput.ipt  # reads a named file
-
-Dependencies
-------------
-    numpy  (conda install numpy  OR  pip install numpy)
-
-All internal calculations use SI units (m, m/s, radians).
-Output is converted to the unit system chosen in the .IPT file.
-"""
+"""Core implementation for generating IEC wind-condition `.wnd` files."""
 
 from __future__ import annotations
 
@@ -33,7 +13,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-VERSION = "1.0.0 (Python port of IECwind 5.01.02)"
+VERSION = "1.0.0"
 DT      = 0.1    # output time step [s]
 VCG     = 15.0   # coherent gust speed [m/s], fixed by IEC
 BETA    = 6.4    # EWS shear definition constant
@@ -187,6 +167,10 @@ FIELD_ALIASES = {
 }
 
 CASE_TYPE_ORDER = ["ECD", "EWS", "EOG", "EDC", "NWP", "EWM"]
+CASE_PREFIXES = {case_type: case_type for case_type in CASE_TYPE_ORDER}
+NONE_TOKENS = {"NONE", "NULL"}
+FALSE_TOKENS = {"FALSE"}
+TRUE_TOKENS = {"TRUE"}
 
 CASE_ROW_COMMENTS = {
     "ECD": "Extreme Coherent Gust with Direction Change. Options: +R, -R, +R+du, +R-du, -R+du, -R-du, where du is a user-unit speed modifier",
@@ -228,54 +212,6 @@ def _finalize_parsed_fields(fields: dict[str, str], conditions: list[str]) -> IE
     )
 
 
-def _condition_description(code: str) -> str:
-    """Return a concise human-readable description of a condition code."""
-    code = code.upper()
-
-    if re.match(r"^ECD([+-])R([+-]?\d*\.?\d*)$", code):
-        direction = "positive" if "+" in code[3:4] else "negative"
-        if code.endswith("R"):
-            return f"enable ECD at Vrated with {direction} direction change"
-        modifier = re.match(r"^ECD[+-]R([+-]?\d*\.?\d*)$", code).group(1)
-        return f"enable ECD at Vrated{modifier} with {direction} direction change"
-
-    m = re.match(r"^EWS([VH])([+-])(\d+\.?\d*)$", code)
-    if m:
-        axis = "vertical" if m.group(1) == "V" else "horizontal"
-        direction = "positive" if m.group(2) == "+" else "negative"
-        return f"enable {direction} {axis} extreme shear at {m.group(3)} user-unit wind speed"
-
-    m = re.match(r"^EOG([IOR])([+-]?\d*\.?\d*)$", code)
-    if m:
-        ref_map = {"I": "cut-in", "O": "cut-out", "R": "rated"}
-        ref = ref_map[m.group(1)]
-        modifier = m.group(2)
-        if m.group(1) == "R" and modifier:
-            return f"enable extreme operating gust at {ref} speed with modifier {modifier}"
-        return f"enable extreme operating gust at {ref} speed"
-
-    m = re.match(r"^EDC([+-])([IOR])([+-]?\d*\.?\d*)$", code)
-    if m:
-        direction = "positive" if m.group(1) == "+" else "negative"
-        ref_map = {"I": "cut-in", "O": "cut-out", "R": "rated"}
-        ref = ref_map[m.group(2)]
-        modifier = m.group(3)
-        if m.group(2) == "R" and modifier:
-            return f"enable {direction} extreme direction change at {ref} speed with modifier {modifier}"
-        return f"enable {direction} extreme direction change at {ref} speed"
-
-    m = re.match(r"^NWP(\d+\.?\d*)$", code)
-    if m:
-        return f"enable normal wind profile at {m.group(1)} m/s"
-
-    m = re.match(r"^EWM(50|01)$", code)
-    if m:
-        recurrence = "50-year" if m.group(1) == "50" else "1-year"
-        return f"enable {recurrence} extreme wind model"
-
-    return "wind condition code"
-
-
 def _normalize_case_options_text(text: str) -> str:
     text = text.strip()
     if text.startswith("[") and text.endswith("]"):
@@ -292,26 +228,13 @@ def _split_case_options(text: str) -> list[str]:
 
 def _expand_case_row(case_type: str, options: list[str], *, lineno: int) -> list[str]:
     """Expand a case table row into concrete condition codes."""
-    expanded: list[str] = []
+    if case_type not in CASE_PREFIXES:
+        raise ValueError(f"Unknown case type on line {lineno}: {case_type}")
 
-    for option in options:
-        upper = option.upper()
-        if case_type == "ECD":
-            expanded.append(f"ECD{upper}")
-        elif case_type == "EWS":
-            expanded.append(f"EWS{upper}")
-        elif case_type == "EOG":
-            expanded.append(f"EOG{upper}")
-        elif case_type == "EDC":
-            expanded.append(f"EDC{upper}")
-        elif case_type == "NWP":
-            expanded.append(f"NWP{option}")
-        elif case_type == "EWM":
-            expanded.append(f"EWM{upper}")
-        else:
-            raise ValueError(f"Unknown case type on line {lineno}: {case_type}")
-
-    return expanded
+    prefix = CASE_PREFIXES[case_type]
+    if case_type == "NWP":
+        return [f"{prefix}{option}" for option in options]
+    return [f"{prefix}{option.upper()}" for option in options]
 
 
 def _parse_case_row(line: str, *, lineno: int) -> list[str]:
@@ -330,11 +253,11 @@ def _parse_case_row(line: str, *, lineno: int) -> list[str]:
     if case_type not in CASE_TYPE_ORDER:
         raise ValueError(f"Unknown case type on line {lineno}: {case_type}")
 
-    if enabled in {"NONE", "NULL"}:
+    if enabled in NONE_TOKENS:
         return []
-    if enabled == "FALSE":
+    if enabled in FALSE_TOKENS:
         return []
-    if enabled != "TRUE":
+    if enabled not in TRUE_TOKENS:
         raise ValueError(
             f"Case enable flag on line {lineno} must be True, False, or None. Got: {parts[1]!r}"
         )
@@ -365,17 +288,23 @@ def _parse_condition_value(value: str, *, lineno: int) -> str | None:
         raise ValueError(f"Missing condition code on line {lineno}.")
 
     first = tokens[0].upper()
-    if first in {"TRUE", "FALSE"}:
+    if first in TRUE_TOKENS | FALSE_TOKENS:
         if len(tokens) < 2:
             raise ValueError(
                 f"Condition toggle on line {lineno} must be followed by a condition code."
             )
-        return " ".join(tokens[1:]).upper() if first == "TRUE" else None
+        return " ".join(tokens[1:]).upper() if first in TRUE_TOKENS else None
 
-    if first in {"NONE", "NULL"}:
+    if first in NONE_TOKENS:
         return None
 
     return value.upper()
+
+
+def _append_condition_value(conditions: list[str], value: str, *, lineno: int) -> None:
+    parsed = _parse_condition_value(value, lineno=lineno)
+    if parsed is not None:
+        conditions.append(parsed)
 
 
 def _build_parameters(
@@ -553,9 +482,7 @@ def _parse_keyed_input_file(raw_lines: list[str]) -> IECParameters:
             continue
 
         if key == "condition":
-            parsed = _parse_condition_value(value, lineno=lineno)
-            if parsed is not None:
-                conditions.append(parsed)
+            _append_condition_value(conditions, value, lineno=lineno)
             continue
 
         if not value:
@@ -600,9 +527,7 @@ def _parse_openfast_input_file(raw_lines: list[str]) -> IECParameters:
             raise ValueError(f"Unknown input key on line {lineno}: {raw_line!r}")
 
         if key in {"condition", "conditions"}:
-            parsed = _parse_condition_value(value, lineno=lineno)
-            if parsed is not None:
-                conditions.append(parsed)
+            _append_condition_value(conditions, value, lineno=lineno)
             continue
 
         if not value:
@@ -827,7 +752,7 @@ def _transient_times(t1: float, duration: float) -> np.ndarray:
     """
     Array of output times during the transient phase.
     Starts at t1, ends at approximately t1+duration, step DT.
-    Length = round(duration/DT) + 1  (matches Fortran NINT(T/DT)+1).
+    Length = round(duration/DT) + 1  (matching historical IECWind step counts).
     """
     nt = round(duration / DT) + 1
     return t1 + np.arange(nt) * DT
@@ -1127,7 +1052,7 @@ def gen_nwp(code: str, p: IECParameters, output_dir: str | Path | None = None) -
 
     Code format:  NWP[nn.n]
       [nn.n]    hub-height wind speed in m/s (no unit conversion applied,
-                matching original Fortran behaviour).
+                matching historical IECWind behaviour).
 
     This produces a single-row file representing a steady wind state with
     the given hub-height speed and the normal power-law shear profile.
@@ -1139,8 +1064,7 @@ def gen_nwp(code: str, p: IECParameters, output_dir: str | Path | None = None) -
             "Expected format: NWP[wind_speed_in_m/s]"
         )
 
-    # NOTE: Original Fortran does NOT apply a unit conversion here.
-    # The speed in the condition code is treated as m/s regardless of SIUnit.
+    # Historical IECWind treats the embedded NWP speed as m/s regardless of SIUnit.
     vhub = float(m.group(1))
     vhub_h, vhub_v = _hub_components(vhub, p.slope_rad)
 
