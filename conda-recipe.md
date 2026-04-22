@@ -27,6 +27,11 @@ conda run -n pyiecwind python -m pip install -e .
 The `recipe/meta.yaml` file is intended as the starting point for a
 `conda-forge/staged-recipes` submission.
 
+See also:
+
+- [`docs/CONDA_FORGE_SUBMISSION.md`](docs/CONDA_FORGE_SUBMISSION.md)
+- [`recipe/STAGED_RECIPES_PR_BODY.md`](recipe/STAGED_RECIPES_PR_BODY.md)
+
 Typical workflow:
 
 1. Fork `conda-forge/staged-recipes`.
@@ -47,6 +52,13 @@ The recipe is set up as:
 
 ## Maintainer Note
 
-The recipe currently uses `SMI-Lab-Inha` under `recipe-maintainers`.
-If conda-forge prefers an individual GitHub username instead of the
-organization handle, replace it before submission.
+The intended conda-forge maintainer is Jae Hoon Seo.
+
+The confirmed GitHub handle used in `recipe-maintainers` is:
+
+```text
+SMI-Lab-Inha
+```
+
+That satisfies conda-forge's expectation that the maintainer entry use a
+GitHub username rather than a plain display name.
