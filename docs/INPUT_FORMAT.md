@@ -35,8 +35,8 @@ B               catg         - turbulence category (A, B, or C)
 3               iec_edition  - IEC edition for alpha (1 or 3)
 
 ! Turbine
-80.000          hh           - hub height [m]
-80.000          dia          - rotor diameter [m]
+150.000         hh           - hub height [m]
+240.000         dia          - rotor diameter [m]
 
 ! Operating Speeds
 4.000           vin          - cut-in wind speed [m/s]

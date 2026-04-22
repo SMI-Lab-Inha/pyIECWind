@@ -86,6 +86,7 @@ For new work, use the OpenFAST-style format.
 
 ## Where To Go Next
 
+- For a realistic multi-case run, see [`STUDY_EXAMPLE.md`](STUDY_EXAMPLE.md).
 - For the input file structure, see [`INPUT_FORMAT.md`](INPUT_FORMAT.md).
 - For individual case meanings and options, see [`CASE_REFERENCE.md`](CASE_REFERENCE.md).
 - For moving from old `IECWind` workflows, see [`MIGRATION.md`](MIGRATION.md).

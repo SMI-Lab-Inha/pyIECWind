@@ -15,8 +15,8 @@ B               catg         - turbulence category (A, B, or C)
 ! Turbine
 ! -------
 
-80.000          hh           - hub height [m]
-80.000          dia          - rotor diameter [m]
+150.000         hh           - hub height [m]
+240.000         dia          - rotor diameter [m]
 
 ! Operating Speeds
 ! ----------------

@@ -62,6 +62,7 @@ IEC standard note:
 More detailed documentation:
 
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+- [`docs/STUDY_EXAMPLE.md`](docs/STUDY_EXAMPLE.md)
 - [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md)
 - [`docs/CASE_REFERENCE.md`](docs/CASE_REFERENCE.md)
 
