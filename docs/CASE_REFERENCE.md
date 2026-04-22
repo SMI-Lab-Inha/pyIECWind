@@ -11,6 +11,8 @@
 - `NWP`: Normal Wind Profile
 - `EWM`: Extreme Wind Model
 
+These are the classical `IECWind`-style wind-condition families used within the `IEC 61400-1` framework implemented by this package.
+
 ## ECD
 
 Meaning:

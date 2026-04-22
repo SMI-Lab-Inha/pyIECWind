@@ -4,6 +4,8 @@
 
 `pyIECWind` generates IEC design load case wind files in `.wnd` format for use with the OpenFAST `InflowWind` module.
 
+The implementation is based on the `IEC 61400-1` wind-condition framework used by legacy `IECWind`, with explicit support for `Edition 1` and `Edition 3` through the `iec_edition` input used in this package.
+
 The package supports three user styles:
 
 - command-line use with a prepared input file
@@ -61,6 +63,16 @@ The exact filenames are based on the expanded condition codes.
 - Internal calculations are performed in SI units.
 - General geometric and operational speed values can be given in SI or English units depending on `si_unit`.
 - `NWP` speeds remain explicitly interpreted as `m/s`, matching historical `IECWind` behavior.
+
+## Standard Scope
+
+The package should be understood as supporting the historical `IECWind` family of wind conditions within the `IEC 61400-1` framework.
+
+This means:
+
+- the repository explicitly exposes `iec_edition = 1` and `iec_edition = 3`
+- these settings map to the implemented power-law shear exponent behavior used in the generated files
+- users should not assume that every feature from every revision of `IEC 61400-1` is implemented unless documented explicitly
 
 ## Supported Input Styles
 

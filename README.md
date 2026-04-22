@@ -11,6 +11,21 @@ It is designed as a practical successor to legacy `IECWind` workflows: easier to
 
 If people are still searching for `IECWind`, `IEC wind file generator`, or legacy NREL-style extreme wind case tooling, this repository is intended to be the place they can land and immediately use.
 
+## Supported IEC Standards
+
+`pyIECWind` is based on the IEC wind-condition framework from `IEC 61400-1`.
+
+The current implementation explicitly supports:
+
+- `IEC 61400-1 Edition 1` for the normal wind-profile shear exponent option `iec_edition = 1`
+- `IEC 61400-1 Edition 3` for the normal wind-profile shear exponent option `iec_edition = 3`
+
+Important scope note:
+
+- the `iec_edition` input in this package currently affects the power-law shear exponent selection used in the generated wind files
+- the supported extreme wind-condition families are the classic `IECWind`-style cases: `ECD`, `EWS`, `EOG`, `EDC`, `NWP`, and `EWM`
+- this repository does not claim blanket support for every clause, edition, or newer revision of `IEC 61400-1`
+
 ## Why This Project Exists
 
 The original `IECWind` workflow is still useful, but many users now need:
@@ -146,3 +161,4 @@ $env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
 - Internal calculations are performed in SI units.
 - `NWP` retains the historical `IECWind` convention that the embedded speed is interpreted in `m/s`.
 - This package generates inflow files; it does not run OpenFAST itself.
+- The supported IEC standard references are currently `IEC 61400-1 Edition 1` and `Edition 3` as used by the package input and implemented case logic.

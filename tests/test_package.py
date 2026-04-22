@@ -35,6 +35,7 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
         self.assertIn("! Operating Speeds", contents)
         self.assertIn("options_array", contents)
         self.assertIn("! EWM: Extreme Wind Model", contents)
+        self.assertIn("IEC 61400-1", contents)
 
     def test_public_default_filenames_match_cleanup_conventions(self) -> None:
         self.assertEqual(DEFAULT_INPUT_FILENAME, "pyiecwind.ipt")

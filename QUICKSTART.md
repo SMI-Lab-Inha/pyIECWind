@@ -54,6 +54,11 @@ Default filenames:
 - `pyiecwind template` writes `pyiecwind_template.ipt`
 - `pyiecwind run` without an explicit file reads `pyiecwind.ipt`
 
+IEC standard note:
+
+- `pyIECWind` currently implements the `IEC 61400-1` case framework used by legacy `IECWind`
+- the `iec_edition` input currently supports `Edition 1` and `Edition 3`
+
 More detailed documentation:
 
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)

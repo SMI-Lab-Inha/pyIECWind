@@ -11,6 +11,11 @@ Main differences:
 - documentation is organized around cases, workflows, and examples
 - the output target is described explicitly as OpenFAST `InflowWind`
 
+Standard clarification:
+
+- `pyIECWind` currently documents and exposes support around the `IEC 61400-1` framework used by historical `IECWind`
+- the package input currently supports `iec_edition = 1` and `iec_edition = 3`
+
 ## What Stays Compatible
 
 The package still supports:

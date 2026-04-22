@@ -9,6 +9,8 @@ The preferred input file is an OpenFAST-style text file with:
 - a dedicated `Cases` section
 - descriptive comments on every row
 
+This file format is used to configure `IEC 61400-1`-based wind-condition generation in the style historically associated with `IECWind`.
+
 General row structure:
 
 ```text
@@ -75,6 +77,7 @@ EWM             True   [50]                      - Extreme Wind Model. Options: 
 
 - IEC edition controlling the normal power-law exponent
 - currently `1` and `3` are supported
+- in practice this corresponds to the `IEC 61400-1 Edition 1` and `Edition 3` options implemented by the package
 
 `hh`
 
