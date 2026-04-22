@@ -1,0 +1,55 @@
+{% set name = "pyiecwind" %}
+{% set version = "0.1.0" %}
+{% set python_min = "3.10" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 712a2139caabe5a11191d9bcd9ff52730eeee5ad07707b8178cb27c5cb75017e
+
+build:
+  noarch: python
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+  entry_points:
+    - pyiecwind = pyiecwind.cli:main
+
+requirements:
+  host:
+    - python {{ python_min }}
+    - pip
+    - setuptools >=69
+    - wheel
+  run:
+    - python >= {{ python_min }}
+    - numpy >=1.24
+
+test:
+  requires:
+    - python {{ python_min }}
+  imports:
+    - pyiecwind
+    - pyiecwind.cli
+  commands:
+    - pyiecwind --help
+
+about:
+  home: https://github.com/SMI-Lab-Inha/pyIECWind
+  summary: Modern Python package for legacy IECWind-style IEC wind-condition generation for OpenFAST InflowWind.
+  description: |
+    pyIECWind is a modern Python package for generating IEC wind-condition
+    .wnd files for the OpenFAST InflowWind module. It modernizes historical
+    IECWind-style workflows with an installable package, documented input
+    format, and command-line interface while preserving support for classic
+    IEC wind-condition families such as ECD, EWS, EOG, EDC, NWP, and EWM.
+  license: MIT
+  license_file: LICENSE
+  doc_url: https://github.com/SMI-Lab-Inha/pyIECWind#readme
+  dev_url: https://github.com/SMI-Lab-Inha/pyIECWind
+
+extra:
+  recipe-maintainers:
+    - SMI-Lab-Inha

@@ -15,6 +15,8 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
         expected = [
             root / "README.md",
             root / "QUICKSTART.md",
+            root / "conda-recipe.md",
+            root / "recipe" / "meta.yaml",
             root / "docs" / "USER_GUIDE.md",
             root / "docs" / "INPUT_FORMAT.md",
             root / "docs" / "CASE_REFERENCE.md",
