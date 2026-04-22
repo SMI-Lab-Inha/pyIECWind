@@ -1,15 +1,15 @@
-# Conda Install
+# Conda Installation
 
-Use your Miniconda installation directly if `conda` is not on `PATH`:
+Create the recommended environment from the provided file:
 
-```powershell
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' env create -f environment.yml
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' run -n pyiecwind pyiecwind --help
+```bash
+conda env create -f environment.yml
+conda run -n pyiecwind pyiecwind --help
 ```
 
 If you prefer to create the environment manually:
 
-```powershell
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' create -n pyiecwind python=3.11 numpy pip -y
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' run -n pyiecwind python -m pip install -e .
+```bash
+conda create -n pyiecwind python=3.11 numpy pip -y
+conda run -n pyiecwind python -m pip install -e .
 ```

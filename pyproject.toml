@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Modern Python packaging of IECWind for generating IEC .wnd files."
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
 dependencies = ["numpy>=1.24"]
 authors = [
   { name = "Jae Hoon Seo" }
@@ -16,10 +17,16 @@ keywords = ["wind-energy", "openfast", "aerodyn", "iec", "iecwind"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering",
 ]
+
+[project.urls]
+Homepage = "https://github.com/SMI-Lab-Inha/pyIECWind"
+Repository = "https://github.com/SMI-Lab-Inha/pyIECWind"
+Issues = "https://github.com/SMI-Lab-Inha/pyIECWind/issues"
 
 [project.scripts]
 pyiecwind = "pyiecwind.cli:main"

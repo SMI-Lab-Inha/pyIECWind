@@ -1,68 +1,55 @@
 # pyIECWind
 
-`pyIECWind` is a packaged, modernized Python version of the legacy NREL `IECWind` workflow for generating IEC wind-condition `.wnd` files for AeroDyn/OpenFAST-style studies.
+`pyIECWind` is a modern Python packaging of the legacy NREL `IECWind` workflow for generating IEC extreme wind-condition files in AeroDyn/OpenFAST `.wnd` format.
 
-The repository now has:
+The project preserves the core IEC wind-condition logic while providing:
 
-- an installable Python package in `src/pyiecwind`
-- a console command, `pyiecwind`
-- an interactive `wizard` mode for non-expert users
-- a template-driven `run` workflow for scripted or repeatable case generation
-- an OpenFAST-style input format with case-family rows
-- a full unit test suite plus GitHub Actions CI
+- an installable Python package
+- a command-line interface for template-based and guided workflows
+- an OpenFAST-style input format
+- automated tests and GitHub Actions CI
 
-## Project Layout
+## Features
 
-```text
-src/pyiecwind/    package code
-tests/            smoke tests
-examples/         sample input file
-.github/          GitHub Actions CI
-iec_wind.py       backward-compatible wrapper
-pyproject.toml    package metadata
-```
+- Supports `ECD`, `EWS`, `EOG`, `EDC`, `NWP`, and `EWM` condition families
+- Generates one `.wnd` file per expanded IEC case
+- Accepts OpenFAST-style case-table inputs, modern keyed inputs, and the legacy fixed-line format
+- Includes an interactive wizard for non-expert users
+- Ships with a sample input file and a commented template generator
 
-## Install
+## Installation
 
 ### Conda
 
-Using your Miniconda installation directly:
+Create the recommended environment from `environment.yml`:
 
-```powershell
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' env create -f environment.yml
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' run -n pyiecwind pyiecwind --help
+```bash
+conda env create -f environment.yml
+conda run -n pyiecwind pyiecwind --help
 ```
 
-Manual environment creation:
+Or create the environment manually:
 
-```powershell
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' create -n pyiecwind python=3.11 numpy pip -y
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' run -n pyiecwind python -m pip install -e .
+```bash
+conda create -n pyiecwind python=3.11 numpy pip -y
+conda run -n pyiecwind python -m pip install -e .
 ```
 
 ### Pip
 
 ```bash
-pip install -e .
+python -m pip install -e .
 ```
 
 ## Quick Start
 
-Generate from an input file:
+Generate wind files from the example input:
 
 ```bash
 pyiecwind run examples/sample_case.ipt -o outputs
 ```
 
-The packaged example input now uses an OpenFAST-style layout:
-
-```text
-40.000   t1    - transient start time [s]
-2        wtc   - wind turbine class
-ECD      True  [+R]  - Extreme Coherent Gust with Direction Change. Options: ...
-```
-
-Create a commented template:
+Write a commented template:
 
 ```bash
 pyiecwind template my_case.ipt
@@ -74,52 +61,66 @@ Launch the interactive wizard:
 pyiecwind wizard -o outputs
 ```
 
-You can also keep using the old script name:
+The compatibility entry point remains available:
 
 ```bash
 python iec_wind.py run examples/sample_case.ipt -o outputs
 ```
 
-## Why The Wizard Matters
+## Input Format
 
-The `wizard` mode is aimed at users who do not already know the IEC case syntax. It walks through:
+The recommended input style is an OpenFAST-like table with one row per parameter and one row per case family. For example:
 
-- turbine class and turbulence category
-- geometry and operating speeds
-- condition selection
-- condition-specific options such as direction, shear type, recurrence period, or speed modifiers
+```text
+True            si_unit      - True for SI (m, m/s), False for English (ft, ft/s)
+40.000          t1           - transient start time [s]
+2               wtc          - wind turbine class (1, 2, or 3)
 
-It can also save a reproducible `.ipt` file alongside the generated `.wnd` files.
+ECD             True   [+R]       - Extreme Coherent Gust with Direction Change. Options: +R, -R, +R+du, ...
+NWP             True   [23.7]     - Normal Wind Profile. Options: array of hub-height wind speeds in m/s
+EWM             True   [50]       - Extreme Wind Model. Options: 50 or 01
+```
+
+See [`examples/sample_case.ipt`](examples/sample_case.ipt) for a complete example.
+
+## Project Layout
+
+```text
+src/pyiecwind/              package implementation
+examples/                   example input file
+tests/                      automated test suite
+.github/workflows/ci.yml    GitHub Actions workflow
+iec_wind.py                 backward-compatible wrapper
+pyproject.toml              package metadata
+environment.yml             conda environment definition
+```
 
 ## Testing
 
-Run the full local test suite with:
+Run the full test suite locally with:
+
+```bash
+PYTHONPATH=src:tests python -m unittest discover -s tests -v
+```
+
+On Windows PowerShell:
 
 ```powershell
 $env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the same suite automatically on pushes and pull requests across Python 3.10 to 3.12.
+GitHub Actions runs the same suite automatically on pushes and pull requests.
 
-## Supported Conditions
+## Reference Files
 
-- `ECD`: Extreme Coherent Gust with Direction Change
-- `EWS`: Extreme Wind Shear
-- `EOG`: Extreme Operating Gust
-- `EDC`: Extreme Direction Change
-- `NWP`: Normal Wind Profile
-- `EWM`: Extreme Wind Model
+- [`QUICKSTART.md`](QUICKSTART.md)
+- [`IECWind_User_Guide.md`](IECWind_User_Guide.md)
+- [`examples/sample_case.ipt`](examples/sample_case.ipt)
+- [`environment.yml`](environment.yml)
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
 ## Notes
 
-- Internal calculations remain in SI units.
-- The current packaging effort preserves the existing Python port as the computational engine.
-- `NWP` still follows legacy behavior: the embedded speed is interpreted in `m/s`.
-
-## Existing Reference Material
-
-- [IECWind_User_Guide.md](/Users/burak/Desktop/IEC_Wind/IECWind_User_Guide.md)
-- [QUICKSTART.md](/Users/burak/Desktop/IEC_Wind/QUICKSTART.md)
-- [examples/sample_case.ipt](/Users/burak/Desktop/IEC_Wind/examples/sample_case.ipt)
-- [environment.yml](/Users/burak/Desktop/IEC_Wind/environment.yml)
-- [.github/workflows/ci.yml](/Users/burak/Desktop/IEC_Wind/.github/workflows/ci.yml)
+- Internal calculations are performed in SI units.
+- `NWP` retains the legacy IECWind convention that the embedded speed is interpreted in `m/s`.
+- The original `IECwind.f90` source is retained in the repository for reference.

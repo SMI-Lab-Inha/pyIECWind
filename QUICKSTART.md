@@ -1,53 +1,57 @@
 # Quick Start
 
-## 1. Install The Package
+## 1. Install
 
-Recommended with Miniconda:
-
-```powershell
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' env create -f environment.yml
-& 'C:\Users\burak\miniconda3\Scripts\conda.exe' run -n pyiecwind pyiecwind --help
-```
-
-Or with `pip` in an existing environment:
+With conda:
 
 ```bash
-pip install -e .
+conda env create -f environment.yml
+conda run -n pyiecwind pyiecwind --help
 ```
 
-## 2. Pick A Workflow
+With pip:
 
-Interactive workflow for non-experts:
+```bash
+python -m pip install -e .
+```
+
+## 2. Choose A Workflow
+
+Use the guided workflow:
 
 ```bash
 pyiecwind wizard -o outputs
 ```
 
-Template workflow for repeatable studies:
+Use a template-driven workflow:
 
 ```bash
 pyiecwind template my_case.ipt
 pyiecwind run my_case.ipt -o outputs
 ```
 
-Example input file:
+Run the shipped example:
 
 ```bash
 pyiecwind run examples/sample_case.ipt -o outputs
 ```
 
-The input file format is now OpenFAST-style:
+## 3. Understand The Input Layout
+
+The recommended input format uses OpenFAST-style parameter rows and case-family rows:
 
 ```text
-True    si_unit  - True for SI (m, m/s)
-40.0    t1       - transient start time [s]
-ECD     True     [+R]      - Extreme Coherent Gust with Direction Change. Options: +R, -R, ...
-NWP     True     [23.7]    - Normal Wind Profile. Options: array of hub-height wind speeds in m/s
+True            si_unit      - True for SI (m, m/s), False for English (ft, ft/s)
+40.000          t1           - transient start time [s]
+ECD             True   [+R]  - Extreme Coherent Gust with Direction Change. Options: +R, -R, +R+du, ...
+NWP             True   [23.7] - Normal Wind Profile. Options: array of hub-height wind speeds in m/s
 ```
 
-## 3. Check The Outputs
+See [`examples/sample_case.ipt`](examples/sample_case.ipt) for a complete example.
 
-You should see one `.wnd` file per selected condition, for example:
+## 4. Check The Outputs
+
+One `.wnd` file is written for each selected case, for example:
 
 ```text
 ECD+R.wnd
@@ -55,15 +59,13 @@ EWSV+12.0.wnd
 EWM50.wnd
 ```
 
-## Backward Compatibility
-
-The legacy entry point still works:
+## 5. Run Tests
 
 ```bash
-python iec_wind.py run examples/sample_case.ipt -o outputs
+PYTHONPATH=src:tests python -m unittest discover -s tests -v
 ```
 
-## Run Tests
+On Windows PowerShell:
 
 ```powershell
 $env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
