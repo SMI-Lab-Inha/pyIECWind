@@ -49,8 +49,14 @@ First public release of `pyIECWind`.
 - `MANIFEST.in` so the sdist ships a complete, runnable test suite and the docs source
 - Documentation encoding guard (rejects mojibake / invalid UTF-8 in markdown)
 - `legacy=` option on `parse_input_file` to opt into legacy edition coercion
+- Hypothesis property-based tests (parser round-trip, grammar, units, invariants)
+- A dependency-free benchmark (`benchmarks/bench_generation.py`) over the scenario matrix
+- Public-API docstrings and an `__all__` on every module; documented thread-safety
 
 ### Changed
+
+- Type checking now runs in `mypy --strict`; pytest treats warnings as errors
+- License metadata modernized to the SPDX form (`license = "MIT"`, PEP 639)
 
 - Library code no longer prints; all user-facing output is owned by the CLI
 - Generators return the written `Path`; `write_template` returns its path

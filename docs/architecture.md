@@ -26,6 +26,10 @@ series and write `.wnd` files, and only the CLI talks to the user.
   (`pyproject.toml`), so code and packaging can never drift. A test guards this.
 - **Output is locked.** Every generator's numeric output is pinned by the golden
   corpus described in {doc}`verification`; refactors must be output-preserving.
+- **Every module declares `__all__`.** Each source module lists its public names
+  in `__all__`; anything not listed (including underscore-prefixed helpers) is
+  internal and may change without notice. `pyiecwind` and `pyiecwind.core` are the
+  supported import facades.
 
 ## Data flow
 
@@ -39,3 +43,15 @@ input file --parse_input_file--> IECParameters --generate_all--> GenerationResul
 
 The wizard short-circuits the parsing step by constructing `IECParameters`
 directly from interactive prompts, then feeds the same `generate_all` path.
+
+## Concurrency and thread-safety
+
+- `IECParameters` is a frozen dataclass with a tuple of `conditions`, so it is
+  immutable and safe to share across threads or processes without copying.
+- Generation holds no global mutable state: each call builds its own
+  `WindFileWriter`. Generating **different** conditions, or the same conditions
+  into **different** output directories, is safe to run concurrently.
+- The one shared resource is the filesystem. Writing the **same** output path
+  from multiple workers at once is *not* safe -- the last writer wins and partial
+  files are possible. Give each worker a distinct `output_dir` (the batch helpers
+  already write one file per condition code).

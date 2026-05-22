@@ -166,6 +166,12 @@ python -m pip install -e ".[docs]"
 sphinx-build -W -b html docs docs/_build/html
 ```
 
+To time generation over the full scenario matrix:
+
+```bash
+python benchmarks/bench_generation.py
+```
+
 ## Notes
 
 - Internal calculations are performed in SI units.
