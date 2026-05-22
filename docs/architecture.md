@@ -29,12 +29,12 @@ series and write `.wnd` files, and only the CLI talks to the user.
 
 ## Data flow
 
-```
-input file ──parse_input_file──▶ IECParameters ──generate_all──▶ GenerationResult
-   (parsing)                       (models)         (generation)     │
-                                                                     ▼
-                                                        <code>.wnd files
-                                                          (WindFileWriter)
+```text
+input file --parse_input_file--> IECParameters --generate_all--> GenerationResult
+  (parsing)                         (models)        (generation)        |
+                                                                        v
+                                                            <code>.wnd files
+                                                             (WindFileWriter)
 ```
 
 The wizard short-circuits the parsing step by constructing `IECParameters`

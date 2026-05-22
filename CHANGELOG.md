@@ -40,19 +40,32 @@ First public release of `pyIECWind`.
 - `IECWindWarning` category for advisory validation issues (escapable to errors)
 - `--continue-on-error` flag on the `run` command; the CLI now exits nonzero when
   conditions fail to generate
-- Golden-reference `.wnd` corpus under `tests/golden/` and golden + property/invariant
-  test suites locking numeric output
+- Golden-reference `.wnd` corpus under `tests/golden/`, plus golden, property/invariant,
+  and independent-oracle test suites locking numeric output
 - Developer tooling configuration (ruff, mypy, pytest-cov with a 90% coverage gate)
 - Sphinx documentation (API reference, architecture, and verification matrix)
 - Cross-platform CI matrix (Linux/macOS/Windows × Python 3.10–3.13) with lint,
   type-check, coverage gate, wheel build/smoke, and docs build
+- `MANIFEST.in` so the sdist ships a complete, runnable test suite and the docs source
+- Documentation encoding guard (rejects mojibake / invalid UTF-8 in markdown)
+- `legacy=` option on `parse_input_file` to opt into legacy edition coercion
 
 ### Changed
 
 - Library code no longer prints; all user-facing output is owned by the CLI
 - Generators return the written `Path`; `write_template` returns its path
 - The `.wnd` header version stamp now reflects the single-sourced package version
+- `generate_all` / `generate_from_input_file` now **fail closed** (`strict=True`
+  by default); the CLI opts into collecting failures with `strict=False`
+- `IECParameters` is now a frozen, self-validating dataclass with `conditions`
+  stored as a tuple, so invalid turbine/input states cannot be constructed
+- `pyiecwind.core` no longer re-exports private helpers or alias tables
 
 ### Fixed
 
 - Version drift between `models.py` (1.0.0) and `pyproject.toml` (0.1.0)
+- EOG/EDC silently ignored speed modifiers on the cut-in (I) and cut-out (O)
+  references; these are now rejected instead of producing misleading files
+- Unsupported IEC editions were silently coerced to edition 3; they now raise
+  unless `legacy=True` is passed
+- Unknown `si_unit` values were treated as English units; they are now rejected

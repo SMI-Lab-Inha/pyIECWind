@@ -17,17 +17,30 @@
 
 ## Validation
 
-Run the full test suite:
+Run the same gates CI enforces (install the dev and docs extras first with
+`python -m pip install -e ".[dev,docs]"`):
 
 ```bash
-PYTHONPATH=src:tests python -m unittest discover -s tests -v
+ruff check .                 # lint
+ruff format --check .        # formatting
+mypy                         # type check
+pytest --cov=pyiecwind       # tests + 90% coverage gate (includes golden + oracle)
+sphinx-build -W -b html docs docs/_build/html   # docs (warnings as errors)
+python -m build              # sdist + wheel
+twine check dist/*           # package metadata
 ```
 
-On Windows PowerShell:
+Then smoke-test the built wheel in a clean environment:
 
-```powershell
-$env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
+```bash
+python -m venv /tmp/wheel-env
+/tmp/wheel-env/bin/python -m pip install dist/*.whl
+/tmp/wheel-env/bin/python -c "import pyiecwind; print(pyiecwind.__version__)"
+/tmp/wheel-env/bin/pyiecwind template /tmp/smoke.ipt
 ```
+
+If golden output changes intentionally, regenerate and review the diff before
+committing: `PYIECWIND_UPDATE_GOLDEN=1 pytest tests/test_golden.py`.
 
 ## Repository Hygiene
 

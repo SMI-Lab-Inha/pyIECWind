@@ -78,12 +78,11 @@ EWM50.wnd
 
 ## 5. Run Tests
 
+Install the dev tooling and run the same checks as CI (no `PYTHONPATH` needed):
+
 ```bash
-PYTHONPATH=src:tests python -m unittest discover -s tests -v
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
+python -m pip install -e ".[dev]"
+ruff check .
+mypy
+pytest --cov=pyiecwind
 ```

@@ -33,7 +33,7 @@ source_suffix = {
     ".md": "markdown",
 }
 
-myst_enable_extensions = ["colon_fence", "deflist"]
+myst_enable_extensions = ["colon_fence", "deflist", "dollarmath"]
 
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
