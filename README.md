@@ -17,12 +17,17 @@ It targets compatibility with selected legacy *IECWind*-style workflows. It has
 
 ## Installation
 
+`pyIECWind` is not yet on PyPI. Install from source:
+
 ```bash
-python -m pip install pyiecwind
+git clone https://github.com/SMI-Lab-Inha/pyIECWind.git
+cd pyIECWind
+python -m pip install -e .
 ```
 
-Conda and source/development installs are described in
-[docs/installation.rst](docs/installation.rst).
+Conda and development installs are described in
+[docs/installation.rst](docs/installation.rst). A PyPI release and a conda-forge
+package are planned.
 
 ## Usage
 

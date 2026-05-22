@@ -1,9 +1,9 @@
 name: Release
 
-# Publishes to PyPI when a version tag is pushed, with build provenance
-# attestation. Requires a one-time setup on PyPI: configure a Trusted Publisher
-# for this project pointing at this repository and the "release.yml" workflow
-# (https://docs.pypi.org/trusted-publishers/). No API token is stored.
+# Builds the distributions with a build-provenance attestation when a version tag
+# is pushed. PyPI publishing is intentionally NOT enabled yet (the package is not
+# on PyPI); see the commented step at the end to enable it once a PyPI Trusted
+# Publisher is configured (https://docs.pypi.org/trusted-publishers/).
 
 on:
   push:
@@ -41,5 +41,13 @@ jobs:
         with:
           subject-path: "dist/*"
 
-      - name: Publish to PyPI (trusted publishing)
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      # PyPI publishing is disabled until the project is on PyPI with a Trusted
+      # Publisher configured. To enable, uncomment the step below.
+      # - name: Publish to PyPI (trusted publishing)
+      #   uses: pypa/gh-action-pypi-publish@release/v1

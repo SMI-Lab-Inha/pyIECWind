@@ -3,12 +3,11 @@ Installation
 
 ``pyIECWind`` requires Python 3.10 or newer and depends only on NumPy.
 
-From PyPI
----------
+.. note::
 
-.. code-block:: console
-
-   $ python -m pip install pyiecwind
+   ``pyIECWind`` is not yet published on PyPI, so ``pip install pyiecwind`` is not
+   available. Install from source or conda as shown below. A PyPI release and a
+   ``conda-forge`` package are planned (see :doc:`deployment`).
 
 From source
 -----------
