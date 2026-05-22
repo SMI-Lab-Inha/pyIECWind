@@ -26,7 +26,7 @@ Two modules are supported import facades:
     ``gen_ewm``) and the shared constants.
 
 Every module declares an explicit ``__all__``. **Any name not listed in a
-module's ``__all__`` — in particular underscore-prefixed helpers — is internal
+module's ``__all__`` - in particular underscore-prefixed helpers - is internal
 and may change or disappear without notice.** Importing internals from their
 defining modules is unsupported.
 
@@ -46,8 +46,8 @@ Validated, immutable parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :class:`~pyiecwind.IECParameters` is a frozen dataclass that validates on
-construction. Every public path — the parser, the wizard, and direct
-construction — goes through the same validation, so an object that violates the
+construction. Every public path - the parser, the wizard, and direct
+construction - goes through the same validation, so an object that violates the
 IEC class/category/edition, geometry, or speed-ordering rules cannot exist. The
 ``conditions`` field is stored as a tuple; instances cannot be mutated into an
 invalid state afterwards.
@@ -112,5 +112,5 @@ Concurrency and thread-safety
   Generating different conditions, or the same conditions into different output
   directories, is safe to run concurrently.
 * The one shared resource is the filesystem. Writing the **same** output path
-  from multiple workers at once is **not** safe — give each worker a distinct
+  from multiple workers at once is **not** safe - give each worker a distinct
   ``output_dir``. The batch helpers already write one file per condition code.

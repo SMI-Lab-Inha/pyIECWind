@@ -70,12 +70,12 @@ To build parameters directly instead of parsing a file:
 
 ``IECParameters`` validates on construction and is immutable, so an invalid
 turbine definition raises immediately rather than producing a misleading file.
-By default :func:`~pyiecwind.generate_all` *fails closed* (``strict=True``) — the
+By default :func:`~pyiecwind.generate_all` *fails closed* (``strict=True``) - the
 first invalid condition raises. See :doc:`api_contract` for the full contract.
 
 Next steps
 ----------
 
-* :doc:`data_sources` — the input file formats and every field.
-* :doc:`theory` — the IEC equations behind each case family.
-* :doc:`api` — the full API reference.
+* :doc:`data_sources` - the input file formats and every field.
+* :doc:`theory` - the IEC equations behind each case family.
+* :doc:`api` - the full API reference.
