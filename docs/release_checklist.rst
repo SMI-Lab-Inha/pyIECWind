@@ -36,7 +36,7 @@ Tag and source archive
 
 .. important::
 
-   Do these in order — the conda ``sha256`` is only valid once the tag exists.
+   Do these in order - the conda ``sha256`` is only valid once the tag exists.
 
 #. Update the changelog: move ``Unreleased`` entries under the new version and date.
 #. Commit and merge to the default branch.
@@ -47,18 +47,24 @@ Tag and source archive
       $ git tag -a v0.1.0 -m "pyIECWind 0.1.0"
       $ git push origin v0.1.0
 
-#. Recompute the source archive hash and update ``recipe/meta.yaml``:
+#. Recompute the source archive hash from the **final** GitHub release archive and
+   update ``recipe/meta.yaml`` (a local ``dist`` hash is not sufficient -- it must
+   match the archive conda-forge will download):
 
    .. code-block:: console
 
       $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v0.1.0.tar.gz | sha256sum
 
-#. Build and publish the distribution (PyPI), and proceed with the conda-forge
-   submission in :doc:`deployment`.
+#. Create the GitHub release for the tag (``gh release create v0.1.0 --generate-notes``
+   or curated notes). Pushing the ``v*`` tag triggers ``.github/workflows/release.yml``,
+   which builds, attaches a build-provenance attestation, and publishes to PyPI via
+   trusted publishing (configure the PyPI Trusted Publisher once beforehand).
+#. Proceed with the conda-forge submission in :doc:`deployment`.
 
 Post-release
 ------------
 
 * Verify ``pip install pyiecwind`` resolves the new version.
-* Verify the source URL in ``recipe/meta.yaml`` resolves and its hash matches.
+* Verify the source URL in ``recipe/meta.yaml`` resolves and its ``sha256`` matches
+  the published release archive.
 * Re-run this checklist if the tagged archive is re-cut for any reason.

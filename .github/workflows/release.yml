@@ -1,0 +1,45 @@
+name: Release
+
+# Publishes to PyPI when a version tag is pushed, with build provenance
+# attestation. Requires a one-time setup on PyPI: configure a Trusted Publisher
+# for this project pointing at this repository and the "release.yml" workflow
+# (https://docs.pypi.org/trusted-publishers/). No API token is stored.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build, attest, and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # OIDC: trusted publishing + attestation signing
+      attestations: write   # build provenance attestation
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check dist/*
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*"
+
+      - name: Publish to PyPI (trusted publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
