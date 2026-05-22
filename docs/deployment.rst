@@ -42,14 +42,15 @@ A ``conda-forge``-style recipe lives in ``recipe/meta.yaml``. It is configured a
 
    .. code-block:: console
 
-      $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v0.1.0.tar.gz | sha256sum
+      $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/vX.Y.Z.tar.gz | sha256sum
 
-   Update both ``recipe/meta.yaml`` and any documentation referencing the hash
-   with the result on every release.
+   (substitute the release version for ``vX.Y.Z``). Update both
+   ``recipe/meta.yaml`` and any documentation referencing the hash with the result
+   on every release.
 
 Submission workflow:
 
-#. Confirm the GitHub tag ``v0.1.0`` exists and the source URL resolves.
+#. Confirm the GitHub tag (``vX.Y.Z``) exists and the source URL resolves.
 #. Recompute and set the ``sha256`` as above.
 #. Fork ``conda-forge/staged-recipes`` and add ``recipes/pyiecwind/meta.yaml``
    from this repository's recipe.

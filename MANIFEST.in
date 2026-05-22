@@ -2,7 +2,9 @@
 recursive-include tests *.py
 recursive-include tests/golden *.wnd
 recursive-include docs *.rst *.py Makefile make.bat
+recursive-include examples *.ipt
 include CHANGELOG.md
+include CITATION.cff
 include MANIFEST.in
 include .gitattributes
 

@@ -40,12 +40,12 @@ Tag and source archive
 
 #. Update the changelog: move ``Unreleased`` entries under the new version and date.
 #. Commit and merge to the default branch.
-#. Tag and push:
+#. Tag and push (substitute the release version for ``vX.Y.Z`` throughout):
 
    .. code-block:: console
 
-      $ git tag -a v0.1.0 -m "pyIECWind 0.1.0"
-      $ git push origin v0.1.0
+      $ git tag -a vX.Y.Z -m "pyIECWind X.Y.Z"
+      $ git push origin vX.Y.Z
 
 #. Recompute the source archive hash from the **final** GitHub release archive and
    update ``recipe/meta.yaml`` (a local ``dist`` hash is not sufficient -- it must
@@ -53,11 +53,12 @@ Tag and source archive
 
    .. code-block:: console
 
-      $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v0.1.0.tar.gz | sha256sum
+      $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/vX.Y.Z.tar.gz | sha256sum
 
-#. Create the GitHub release for the tag (``gh release create v0.1.0 --generate-notes``
+#. Create the GitHub release for the tag (``gh release create vX.Y.Z --generate-notes``
    or curated notes). Pushing the ``v*`` tag triggers ``.github/workflows/release.yml``,
-   which builds the distributions and attaches a build-provenance attestation.
+   which builds the distributions, attaches a build-provenance attestation, and
+   uploads the sdist/wheel as release assets.
 #. Proceed with the conda-forge submission in :doc:`deployment`.
 
 .. note::
