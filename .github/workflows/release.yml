@@ -1,9 +1,10 @@
 name: Release
 
-# Builds the distributions with a build-provenance attestation when a version tag
-# is pushed. PyPI publishing is intentionally NOT enabled yet (the package is not
-# on PyPI); see the commented step at the end to enable it once a PyPI Trusted
-# Publisher is configured (https://docs.pypi.org/trusted-publishers/).
+# On a version tag, builds the distributions with a build-provenance attestation
+# and attaches them to the GitHub Release. PyPI publishing is intentionally NOT
+# enabled yet (the package is not on PyPI); see the commented step at the end to
+# enable it once a PyPI Trusted Publisher is configured
+# (https://docs.pypi.org/trusted-publishers/).
 
 on:
   push:
@@ -15,10 +16,10 @@ permissions:
 
 jobs:
   release:
-    name: Build, attest, and publish
+    name: Build, attest, and attach release assets
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write       # create/update the GitHub Release and upload assets
       id-token: write       # OIDC: trusted publishing + attestation signing
       attestations: write   # build provenance attestation
     steps:
@@ -41,11 +42,16 @@ jobs:
         with:
           subject-path: "dist/*"
 
-      - name: Upload distributions
+      - name: Upload distributions as workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
+
+      - name: Attach distributions to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
 
       # PyPI publishing is disabled until the project is on PyPI with a Trusted
       # Publisher configured. To enable, uncomment the step below.

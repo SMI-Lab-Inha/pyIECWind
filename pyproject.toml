@@ -29,7 +29,7 @@ classifiers = [
 Homepage = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Repository = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Issues = "https://github.com/SMI-Lab-Inha/pyIECWind/issues"
-Documentation = "https://github.com/SMI-Lab-Inha/pyIECWind#readme"
+Documentation = "https://pyiecwind.readthedocs.io/"
 
 [project.optional-dependencies]
 dev = [
@@ -40,6 +40,7 @@ dev = [
   "mypy>=1.8",
   "build>=1.0",
   "twine>=5.0",
+  "pip-audit>=2.7",
 ]
 docs = [
   "sphinx>=7.0",
