@@ -1,9 +1,5 @@
-Changelog
-=========
+.. This page renders the canonical CHANGELOG.md (single source) via MyST, so it
+   never drifts. The page title comes from the Markdown H1.
 
-The changelog is maintained as a single source in ``CHANGELOG.md`` at the
-repository root and is included verbatim below, so this page never drifts out of
-sync with it.
-
-.. literalinclude:: ../CHANGELOG.md
-   :language: markdown
+.. include:: ../CHANGELOG.md
+   :parser: myst_parser.sphinx_

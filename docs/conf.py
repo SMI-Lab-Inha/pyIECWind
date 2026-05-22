@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
+    "myst_parser",  # only to parse the included Markdown CHANGELOG (see changelog.rst)
 ]
 
 source_suffix = {".rst": "restructuredtext"}
