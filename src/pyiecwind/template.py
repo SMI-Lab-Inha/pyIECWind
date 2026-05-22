@@ -11,7 +11,22 @@ __all__ = ["format_openfast_input", "default_template_text", "write_template"]
 
 
 def format_openfast_input(params: IECParameters) -> str:
-    """Render parameters in a readable OpenFAST-style layout."""
+    """Render parameters as an OpenFAST-style input file.
+
+    The output round-trips: feeding it back through
+    :func:`~pyiecwind.parse_input_file` reproduces the same conditions and scalars.
+
+    Parameters
+    ----------
+    params : IECParameters
+        The parameters to render. Length and speed fields are shown in the
+        parameters' own unit system (``si_unit``).
+
+    Returns
+    -------
+    str
+        The formatted input-file text, including the grouped ``Cases`` section.
+    """
 
     lc = params.len_convert
     value_width = 14
@@ -116,7 +131,18 @@ def default_template_text() -> str:
 
 
 def write_template(dest: str | Path = DEFAULT_TEMPLATE_FILENAME) -> Path:
-    """Write a commented template input file and return its path."""
+    """Write a commented example input file to ``dest``.
+
+    Parameters
+    ----------
+    dest : str or pathlib.Path, optional
+        Destination path. Defaults to ``pyiecwind_template.ipt``.
+
+    Returns
+    -------
+    pathlib.Path
+        The path that was written.
+    """
 
     path = Path(dest)
     path.write_text(default_template_text(), encoding="utf-8")
