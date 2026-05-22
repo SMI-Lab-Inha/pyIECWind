@@ -125,7 +125,7 @@ file under *Cite this repository*.
 ## References
 
 - IEC 61400-1, *Wind turbines - Part 1: Design requirements* (Editions 1 and 3).
-- B. J. Jonkman and M. L. Buhl, *IECWind*, National Laboratory of the Rockies
+- M. L. Buhl Jr., *IECWind*, National Laboratory of the Rockies
   (formerly the National Renewable Energy Laboratory).
 - OpenFAST *InflowWind* module documentation, National Laboratory of the Rockies
   (formerly the National Renewable Energy Laboratory).

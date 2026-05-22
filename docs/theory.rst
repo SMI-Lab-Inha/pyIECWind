@@ -198,7 +198,7 @@ References
 
 * IEC 61400-1, *Wind turbines -- Part 1: Design requirements*, Clause 6 (Wind
   conditions), Editions 1 and 3. International Electrotechnical Commission.
-* J. Jonkman and M. L. Buhl Jr., *IECWind*, National Laboratory of the Rockies
+* M. L. Buhl Jr., *IECWind*, National Laboratory of the Rockies
   (formerly the National Renewable Energy Laboratory).
   https://www.nlr.gov/wind/nwtc/iecwind
 * OpenFAST *InflowWind* module documentation, National Laboratory of the Rockies
