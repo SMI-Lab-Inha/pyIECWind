@@ -2,82 +2,46 @@
 
 All notable changes to `pyIECWind` will be documented in this file.
 
-The format is inspired by Keep a Changelog, adapted to the current needs of this project.
+The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
-## [0.1.0] - 2026-04-22
+## [0.1.0] - 2026-05-22
 
-First public release of `pyIECWind`.
-
-### Added
-
-- Installable Python package structure under `src/pyiecwind`
-- Command-line interface with `run`, `template`, and `wizard` workflows
-- OpenFAST-style input formatting with aligned `value  key  - comment` rows
-- Case-table support for `ECD`, `EWS`, `EOG`, `EDC`, `NWP`, and `EWM`
-- User documentation in `docs/`
-- GitHub Actions CI workflow
-- Automated test coverage for parsing, validation, generation, CLI behavior, and package surface
-- First public release tag: `v0.1.0`
-
-### Changed
-
-- Refactored the original monolithic implementation into clearer package modules
-- Replaced legacy default filenames with `pyiecwind.ipt` and `pyiecwind_template.ipt`
-- Clarified that generated `.wnd` files are intended for OpenFAST `InflowWind`
-- Explicitly documented current `IEC 61400-1` scope, including `Edition 1` and `Edition 3` support through `iec_edition`
-
-### Removed
-
-- Legacy top-level files and script-era artifacts that were no longer appropriate for the public package layout
-
-## Unreleased
+First public release of `pyIECWind`: a typed, validated, and regression-locked
+package for generating IEC 61400-1 wind-condition `.wnd` files for the OpenFAST
+*InflowWind* module.
 
 ### Added
 
-- `__version__` exposed on the package, single-sourced from package metadata
-- Structured generation results (`GenerationResult`, `GenerationError`) and a
-  `strict=` mode on `generate_all` / `generate_from_input_file`
-- `IECWindWarning` category for advisory validation issues (escapable to errors)
-- `--continue-on-error` flag on the `run` command; the CLI now exits nonzero when
-  conditions fail to generate
-- Golden-reference `.wnd` corpus under `tests/golden/`, plus golden, property/invariant,
-  and independent-oracle test suites locking numeric output
-- Developer tooling configuration (ruff, mypy, pytest-cov with a 90% coverage gate)
+- Installable package (`src/pyiecwind`) with a `pyiecwind` CLI (`run`, `template`,
+  `wizard`) and a `python -m pyiecwind` entry point.
+- The six IEC condition families - `ECD`, `EWS`, `EOG`, `EDC`, `NWP`, and `EWM` -
+  across SI and English units and IEC 61400-1 Editions 1 and 3.
+- Three input layouts (OpenFAST-style table, keyed, and legacy positional) parsed
+  into a frozen, self-validating `IECParameters`, plus an OpenFAST-style formatter
+  and template writer.
+- Structured generation results (`GenerationResult`, `GenerationError`) with a
+  fail-closed `strict=` mode, `IECWindWarning` for advisory diagnostics, and a
+  `--continue-on-error` CLI flag.
+- `__version__` single-sourced from the installed package metadata.
+- Verification: a committed golden `.wnd` corpus, an independent oracle derived
+  from the IEC equations, and property/invariant tests (Hypothesis).
 - reStructuredText documentation built with Sphinx (theory with equations, units,
-  input files, API reference, API contract, validation, limitations, deployment)
-- Cross-platform CI matrix (Linux/macOS/Windows × Python 3.10–3.13) with lint,
-  type-check, coverage gate, wheel build/smoke, docs build, and a benchmark smoke step
-- `MANIFEST.in` so the sdist ships a complete, runnable test suite and the docs source
-- Documentation encoding guard (rejects mojibake / invalid UTF-8 in markdown)
-- `legacy=` option on `parse_input_file` to opt into legacy edition coercion
-- Hypothesis property-based tests (parser round-trip, grammar, units, invariants)
-- A dependency-free benchmark (`benchmarks/bench_generation.py`) over the scenario matrix
-- Full NumPy-style public-API docstrings (Parameters/Returns/Raises/Examples) and
-  an `__all__` on every module; documented thread-safety
+  input files, API reference, API contract, validation, limitations, deployment),
+  with a Read the Docs configuration.
+- Tooling and CI: ruff, mypy `--strict`, pytest with a 90% coverage gate and
+  warnings-as-errors, a cross-platform matrix (Linux/macOS/Windows x Python
+  3.10-3.13), wheel build/smoke, a docs build, and a benchmark smoke step.
+- A conda-forge-ready recipe and a self-contained sdist that ships the tests, the
+  golden corpus, and the documentation source.
 
-### Changed
+### Notes
 
-- Type checking now runs in `mypy --strict`; pytest treats warnings as errors
-- License metadata modernized to the SPDX form (`license = "MIT"`, PEP 639)
-- Documentation converted from Markdown to reStructuredText; superseded user-guide
-  and conda notes removed in favour of the Sphinx pages
-- Conda recipe requires `setuptools >=77` (matching the build backend), with the
-  source `sha256` set from the tagged release archive
-
-- Library code no longer prints; all user-facing output is owned by the CLI
-- Generators return the written `Path`; `write_template` returns its path
-- The `.wnd` header version stamp now reflects the single-sourced package version
-- `generate_all` / `generate_from_input_file` now **fail closed** (`strict=True`
-  by default); the CLI opts into collecting failures with `strict=False`
-- `IECParameters` is now a frozen, self-validating dataclass with `conditions`
-  stored as a tuple, so invalid turbine/input states cannot be constructed
-- `pyiecwind.core` no longer re-exports private helpers or alias tables
-
-### Fixed
-
-- Version drift between `models.py` (1.0.0) and `pyproject.toml` (0.1.0)
-- EOG/EDC silently ignored speed modifiers on the cut-in (I) and cut-out (O)
-  references; these are now rejected instead of producing misleading files
-- Unsupported IEC editions were silently coerced to edition 3; they now raise
-  unless `legacy=True` is passed
-- Unknown `si_unit` values were treated as English units; they are now rejected
+- Library code never prints; all user-facing output and exit codes are owned by
+  the CLI.
+- Generation fails closed by default: the first invalid condition raises rather
+  than producing partial output.
+- Speed modifiers are valid only on the rated (`R`) reference; unsupported IEC
+  editions and unknown unit tokens are rejected (legacy coercion is opt-in via
+  `parse_input_file(..., legacy=True)`).
+- This release supersedes an earlier internal `v0.1.0` tag; the published tag now
+  points to this hardened source.
