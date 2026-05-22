@@ -61,8 +61,8 @@ First public release of `pyIECWind`.
 - License metadata modernized to the SPDX form (`license = "MIT"`, PEP 639)
 - Documentation converted from Markdown to reStructuredText; superseded user-guide
   and conda notes removed in favour of the Sphinx pages
-- Conda recipe requires `setuptools >=77` (matching the build backend); its
-  `sha256` is a placeholder until the release tag is pushed
+- Conda recipe requires `setuptools >=77` (matching the build backend), with the
+  source `sha256` set from the tagged release archive
 
 - Library code no longer prints; all user-facing output is owned by the CLI
 - Generators return the written `Path`; `write_template` returns its path

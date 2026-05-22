@@ -36,17 +36,16 @@ A ``conda-forge``-style recipe lives in ``recipe/meta.yaml``. It is configured a
 
 .. important::
 
-   The ``sha256`` in ``recipe/meta.yaml`` is a **placeholder**. It must be
-   recomputed from the tagged source archive *after* the ``v0.1.0`` tag is pushed,
-   because the archive contents (and therefore the hash) are not fixed until the
-   tag exists:
+   The ``sha256`` in ``recipe/meta.yaml`` is the hash of the tagged source
+   archive and must be recomputed whenever the version tag changes, because the
+   archive contents (and therefore the hash) are fixed only once the tag exists:
 
    .. code-block:: console
 
       $ curl -sL https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v0.1.0.tar.gz | sha256sum
 
    Update both ``recipe/meta.yaml`` and any documentation referencing the hash
-   with the result before submitting.
+   with the result on every release.
 
 Submission workflow:
 
