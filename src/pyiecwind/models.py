@@ -4,8 +4,40 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _distribution_version
 
-VERSION = "1.0.0"
+
+def _resolve_version() -> str:
+    """Return the installed distribution version (the single source of truth).
+
+    The version is declared once, in ``pyproject.toml``. Reading it back through
+    package metadata guarantees code and packaging can never drift apart. When
+    the package is run from a source tree without being installed, metadata is
+    unavailable and we fall back to a clearly non-release marker.
+    """
+
+    try:
+        return _distribution_version("pyiecwind")
+    except PackageNotFoundError:  # pragma: no cover - only when running uninstalled
+        return "0.0.0+unknown"
+
+
+VERSION = _resolve_version()
+
+
+class IECWindWarning(UserWarning):
+    """Advisory warning for non-fatal IEC validation concerns.
+
+    Emitted for inputs that are accepted but fall outside IEC guidance (for
+    example an inclination angle beyond 8 deg). Callers who want strict
+    behaviour can escalate these to errors::
+
+        import warnings
+        warnings.simplefilter("error", IECWindWarning)
+    """
+
+
 DT = 0.1
 VCG = 15.0
 BETA = 6.4

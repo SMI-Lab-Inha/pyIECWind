@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import Path
 
 from .models import (
@@ -10,9 +11,10 @@ from .models import (
     CASE_TYPE_ORDER,
     DEFAULT_INPUT_FILENAME,
     FALSE_TOKENS,
-    IECParameters,
     NONE_TOKENS,
     TRUE_TOKENS,
+    IECParameters,
+    IECWindWarning,
 )
 
 FIELD_ALIASES = {
@@ -97,9 +99,7 @@ def _parse_case_row(line: str, *, lineno: int) -> list[str]:
     if enabled in NONE_TOKENS or enabled in FALSE_TOKENS:
         return []
     if enabled not in TRUE_TOKENS:
-        raise ValueError(
-            f"Case enable flag on line {lineno} must be True, False, or None. Got: {parts[1]!r}"
-        )
+        raise ValueError(f"Case enable flag on line {lineno} must be True, False, or None. Got: {parts[1]!r}")
 
     options = _split_case_options(options_text)
     if not options:
@@ -108,7 +108,7 @@ def _parse_case_row(line: str, *, lineno: int) -> list[str]:
 
 
 def _group_conditions_by_type(conditions: list[str]) -> dict[str, list[str]]:
-    grouped = {case_type: [] for case_type in CASE_TYPE_ORDER}
+    grouped: dict[str, list[str]] = {case_type: [] for case_type in CASE_TYPE_ORDER}
     for code in conditions:
         prefix = code[:3].upper()
         if prefix in grouped:
@@ -124,9 +124,7 @@ def _parse_condition_value(value: str, *, lineno: int) -> str | None:
     first = tokens[0].upper()
     if first in TRUE_TOKENS | FALSE_TOKENS:
         if len(tokens) < 2:
-            raise ValueError(
-                f"Condition toggle on line {lineno} must be followed by a condition code."
-            )
+            raise ValueError(f"Condition toggle on line {lineno} must be followed by a condition code.")
         return " ".join(tokens[1:]).upper() if first in TRUE_TOKENS else None
     if first in NONE_TOKENS:
         return None
@@ -164,15 +162,17 @@ def _build_parameters(
         raise ValueError(f"Turbulence category must be A, B, or C. Got: {catg!r}")
 
     if abs(slope_deg) > 8.0:
-        print(
-            "WARNING: IEC specifies a maximum inclination angle of 8 deg.\n"
-            f"         You specified {slope_deg:.2f} degrees."
+        warnings.warn(
+            f"IEC specifies a maximum inclination angle of 8 deg; you specified {slope_deg:.2f} degrees.",
+            IECWindWarning,
+            stacklevel=2,
         )
 
     if iec_edition not in (1, 3):
-        print(
-            f"WARNING: IEC edition should be 1 or 3. Got: {iec_edition}. "
-            "Wind shear exponent will default to Alpha=0.14 (Ed.3)."
+        warnings.warn(
+            f"IEC edition should be 1 or 3. Got: {iec_edition}. Wind shear exponent will default to Alpha=0.14 (Ed.3).",
+            IECWindWarning,
+            stacklevel=2,
         )
         iec_edition = 3
 
@@ -262,8 +262,8 @@ def _parse_legacy_input_file(raw_lines: list[str]) -> IECParameters:
     def line_val(idx: int, name: str) -> str:
         try:
             return first_token(raw_lines[idx])
-        except (IndexError, ValueError):
-            raise ValueError(f"Premature end of file reading '{name}' at line {idx + 1}.")
+        except (IndexError, ValueError) as exc:
+            raise ValueError(f"Premature end of file reading '{name}' at line {idx + 1}.") from exc
 
     si_raw = line_val(2, "units specifier").upper()
     si_unit = si_raw in ("T", "TRUE", ".TRUE.")
@@ -401,11 +401,7 @@ def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME) -> IECParame
     )
 
     if openfast_format:
-        params = _parse_openfast_input_file(raw_lines)
-    elif keyed_format:
-        params = _parse_keyed_input_file(raw_lines)
-    else:
-        params = _parse_legacy_input_file(raw_lines)
-
-    print(f"Read {len(params.conditions)} condition(s) from '{path}'.")
-    return params
+        return _parse_openfast_input_file(raw_lines)
+    if keyed_format:
+        return _parse_keyed_input_file(raw_lines)
+    return _parse_legacy_input_file(raw_lines)

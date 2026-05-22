@@ -111,9 +111,9 @@ def default_template_text() -> str:
     )
 
 
-def write_template(dest: str | Path = DEFAULT_TEMPLATE_FILENAME) -> None:
+def write_template(dest: str | Path = DEFAULT_TEMPLATE_FILENAME) -> Path:
+    """Write a commented template input file and return its path."""
+
     path = Path(dest)
     path.write_text(default_template_text(), encoding="utf-8")
-    print(f"Template written to: {path}")
-    print("Edit the values and case rows, then run:")
-    print(f"  pyiecwind run {path}")
+    return path

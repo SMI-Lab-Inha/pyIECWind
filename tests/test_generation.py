@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import os
 import unittest
 from pathlib import Path
 
-from pyiecwind.core import EWM_ALPHA, gen_ecd, gen_edc, gen_eog, gen_ewm, gen_ews, gen_nwp, generate_all
-
 from helpers import WorkspaceTestCaseMixin, default_parameters
+from pyiecwind.core import EWM_ALPHA, gen_ecd, gen_edc, gen_eog, gen_ewm, gen_ews, gen_nwp, generate_all
 
 
 class GenerationTests(WorkspaceTestCaseMixin, unittest.TestCase):
@@ -36,9 +36,10 @@ class GenerationTests(WorkspaceTestCaseMixin, unittest.TestCase):
         output_dir = tmp / "nested" / "wind"
         params = default_parameters(conditions=["EWM50", "NWP10.0"])
 
-        count = generate_all(params, output_dir=output_dir)
+        result = generate_all(params, output_dir=output_dir)
 
-        self.assertEqual(count, 2)
+        self.assertEqual(result.count, 2)
+        self.assertTrue(result.ok)
         self.assertTrue((output_dir / "EWM50.wnd").exists())
         self.assertTrue((output_dir / "NWP10.0.wnd").exists())
 
@@ -68,3 +69,58 @@ class GenerationTests(WorkspaceTestCaseMixin, unittest.TestCase):
         contents = (tmp / "EWSV+12.0.wnd").read_text(encoding="utf-8")
         self.assertIn("Extreme Vertical Wind Shear", contents)
         self.assertIn("Time", contents)
+
+    def test_generators_return_written_path(self) -> None:
+        tmp = self.workspace_tempdir()
+        params = default_parameters()
+        path = gen_nwp("NWP10.0", params, output_dir=tmp)
+        self.assertEqual(path, tmp / "NWP10.0.wnd")
+        self.assertTrue(path.exists())
+
+    def test_generator_writes_to_cwd_when_output_dir_is_none(self) -> None:
+        tmp = self.workspace_tempdir()
+        cwd = Path.cwd()
+        os.chdir(tmp)
+        try:
+            path = gen_ewm("EWM01", default_parameters())
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(path.name, "EWM01.wnd")
+        self.assertTrue((tmp / "EWM01.wnd").exists())
+
+    def test_eog_and_edc_inflow_outflow_references(self) -> None:
+        tmp = self.workspace_tempdir()
+        params = default_parameters()
+        for code in ("EOGI", "EOGO", "EDC+I", "EDC-O"):
+            gen = gen_eog if code.startswith("EOG") else gen_edc
+            self.assertTrue(gen(code, params, output_dir=tmp).exists(), code)
+
+
+class GeneratorErrorTests(WorkspaceTestCaseMixin, unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = self.workspace_tempdir()
+        self.params = default_parameters()
+
+    def test_unparseable_codes_raise_value_error(self) -> None:
+        cases = [
+            (gen_ecd, "ECDX"),
+            (gen_ews, "EWSX+12.0"),
+            (gen_eog, "EOGZ"),
+            (gen_edc, "EDCX"),
+            (gen_nwp, "NWPfast"),
+            (gen_ewm, "EWM99"),
+        ]
+        for generator, code in cases:
+            with self.subTest(code=code):
+                with self.assertRaisesRegex(ValueError, "Cannot parse"):
+                    generator(code, self.params, output_dir=self.tmp)
+
+    def test_speed_modifier_above_two_raises(self) -> None:
+        for generator, code in ((gen_ecd, "ECD+R+3.0"), (gen_eog, "EOGR+3.0"), (gen_edc, "EDC+R+3.0")):
+            with self.subTest(code=code):
+                with self.assertRaisesRegex(ValueError, "must not exceed"):
+                    generator(code, self.params, output_dir=self.tmp)
+
+    def test_ews_speed_outside_operating_range_raises(self) -> None:
+        with self.assertRaisesRegex(ValueError, "must be between"):
+            gen_ews("EWSV+99.0", self.params, output_dir=self.tmp)

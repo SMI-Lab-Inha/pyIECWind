@@ -1,17 +1,29 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from .core import (
     DEFAULT_INPUT_FILENAME,
     DEFAULT_TEMPLATE_FILENAME,
-    IECParameters,
     VERSION,
+    GenerationResult,
+    IECParameters,
     format_openfast_input,
+    generate_all,
     generate_from_input_file,
     write_template,
 )
+
+
+def _report_result(result: GenerationResult) -> None:
+    """Print per-file progress and any skipped conditions."""
+
+    for path in result.generated:
+        print(f"  Generated: {path.name}")
+    for error in result.errors:
+        print(f"  ERROR: {error}", file=sys.stderr)
 
 
 def _prompt_text(prompt: str, default: str) -> str:
@@ -146,13 +158,12 @@ def _run_wizard(args: argparse.Namespace) -> int:
         input_path = output_dir / args.save_input
         input_path.write_text(_parameters_to_input_text(params), encoding="utf-8")
 
-    from .core import generate_all
-
-    count = generate_all(params, output_dir=output_dir)
-    print(f"\nGenerated {count} wind file(s) in {output_dir}")
+    result = generate_all(params, output_dir=output_dir)
+    _report_result(result)
+    print(f"\nGenerated {result.count} wind file(s) in {output_dir}")
     if input_path is not None:
         print(f"Saved reproducible input file to {input_path}")
-    return 0
+    return 0 if result.ok else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -165,6 +176,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser("run", help="Generate .wnd files from an .ipt file.")
     run_parser.add_argument("input_file", nargs="?", default=DEFAULT_INPUT_FILENAME)
     run_parser.add_argument("-o", "--output-dir", default=".")
+    run_parser.add_argument(
+        "--continue-on-error",
+        action="store_true",
+        help="Exit 0 even if some conditions fail to generate (default: exit nonzero).",
+    )
 
     template_parser = subparsers.add_parser("template", help="Write a commented template input file.")
     template_parser.add_argument("dest", nargs="?", default=DEFAULT_TEMPLATE_FILENAME)
@@ -181,19 +197,26 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command is None:
-        params, count = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".")
+        params, result = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".")
+        print(f"Read {len(params.conditions)} condition(s) from '{DEFAULT_INPUT_FILENAME}'.")
+        _report_result(result)
         print(params.summary())
-        print(f"\nGenerated {count} wind file(s).")
-        return 0
+        print(f"\nGenerated {result.count} wind file(s).")
+        return 0 if result.ok else 1
 
     if args.command == "run":
-        params, count = generate_from_input_file(args.input_file, output_dir=args.output_dir)
+        params, result = generate_from_input_file(args.input_file, output_dir=args.output_dir)
+        print(f"Read {len(params.conditions)} condition(s) from '{args.input_file}'.")
+        _report_result(result)
         print(params.summary())
-        print(f"\nGenerated {count} wind file(s).")
-        return 0
+        print(f"\nGenerated {result.count} wind file(s).")
+        return 0 if (result.ok or args.continue_on_error) else 1
 
     if args.command == "template":
-        write_template(args.dest)
+        path = write_template(args.dest)
+        print(f"Template written to: {path}")
+        print("Edit the values and case rows, then run:")
+        print(f"  pyiecwind run {path}")
         return 0
 
     if args.command == "wizard":

@@ -2,7 +2,19 @@
 
 from __future__ import annotations
 
-from .generation import EWM_ALPHA, gen_ecd, gen_edc, gen_eog, gen_ewm, gen_ews, gen_nwp, generate_all, generate_from_input_file
+from .generation import (
+    EWM_ALPHA,
+    GenerationError,
+    GenerationResult,
+    gen_ecd,
+    gen_edc,
+    gen_eog,
+    gen_ewm,
+    gen_ews,
+    gen_nwp,
+    generate_all,
+    generate_from_input_file,
+)
 from .models import (
     BETA,
     CASE_PREFIXES,
@@ -11,13 +23,14 @@ from .models import (
     DEFAULT_INPUT_FILENAME,
     DEFAULT_TEMPLATE_FILENAME,
     DT,
-    IECParameters,
+    FALSE_TOKENS,
     NONE_TOKENS,
     PI,
     TRUE_TOKENS,
-    FALSE_TOKENS,
     VCG,
     VERSION,
+    IECParameters,
+    IECWindWarning,
 )
 from .parsing import (
     FIELD_ALIASES,
@@ -44,7 +57,10 @@ __all__ = [
     "EWM_ALPHA",
     "FALSE_TOKENS",
     "FIELD_ALIASES",
+    "GenerationError",
+    "GenerationResult",
     "IECParameters",
+    "IECWindWarning",
     "NONE_TOKENS",
     "PI",
     "TRUE_TOKENS",
