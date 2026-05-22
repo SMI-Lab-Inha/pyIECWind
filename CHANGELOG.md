@@ -4,6 +4,25 @@ All notable changes to `pyIECWind` will be documented in this file.
 
 The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
+## [0.1.2] - 2026-05-22
+
+Packaging, release-process, and documentation fixes. No changes to generated
+`.wnd` output.
+
+### Added
+
+- The source distribution now ships `CITATION.cff` and the `examples/` directory.
+- The release workflow attaches the built sdist and wheel to the GitHub Release
+  (alongside the build-provenance attestation).
+- `pip-audit` is part of the `dev` extra so the dependency audit runs locally.
+
+### Changed
+
+- Documentation theme switched to `sphinx_rtd_theme` (Read the Docs theme).
+- The documentation changelog is now generated from `CHANGELOG.md` (single source),
+  and release-process docs use version-agnostic placeholders.
+- The `Documentation` project URL points to Read the Docs.
+
 ## [0.1.1] - 2026-05-22
 
 Documentation, provenance, and supply-chain hardening. No changes to generated
