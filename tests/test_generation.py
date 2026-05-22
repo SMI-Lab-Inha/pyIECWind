@@ -124,3 +124,17 @@ class GeneratorErrorTests(WorkspaceTestCaseMixin, unittest.TestCase):
     def test_ews_speed_outside_operating_range_raises(self) -> None:
         with self.assertRaisesRegex(ValueError, "must be between"):
             gen_ews("EWSV+99.0", self.params, output_dir=self.tmp)
+
+    def test_modifier_on_non_rated_reference_is_rejected(self) -> None:
+        # A modifier is only meaningful for the rated-speed (R) reference. On
+        # cut-in (I) / cut-out (O) it must be rejected, never silently ignored.
+        for generator, code in (
+            (gen_eog, "EOGI+2.0"),
+            (gen_eog, "EOGO-1.0"),
+            (gen_edc, "EDC+I+2.0"),
+            (gen_edc, "EDC-O-1.0"),
+        ):
+            with self.subTest(code=code):
+                with self.assertRaisesRegex(ValueError, "Cannot parse"):
+                    generator(code, self.params, output_dir=self.tmp)
+                self.assertFalse((self.tmp / f"{code}.wnd").exists(), code)

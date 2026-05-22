@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 import unittest
 
 from helpers import WorkspaceTestCaseMixin, default_parameters
-from pyiecwind.core import IECWindWarning, _build_parameters, _parse_case_row, generate_all
+from pyiecwind import IECParameters
+from pyiecwind.core import IECWindWarning, generate_all
+from pyiecwind.parsing import _build_parameters, _parse_case_row
 
 
 class ValidationTests(WorkspaceTestCaseMixin, unittest.TestCase):
@@ -100,7 +103,24 @@ class ValidationTests(WorkspaceTestCaseMixin, unittest.TestCase):
                 conditions=["EWM50"],
             )
 
-    def test_unsupported_edition_warns_and_defaults_to_edition_3(self) -> None:
+    def test_unsupported_edition_raises_by_default(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Unsupported IEC edition"):
+            _build_parameters(
+                si_unit=True,
+                t1=40.0,
+                wtc=2,
+                catg="B",
+                slope_deg=0.0,
+                iec_edition=2,
+                hh_raw=80.0,
+                dia_raw=80.0,
+                vin_raw=4.0,
+                vrated_raw=10.0,
+                vout_raw=24.0,
+                conditions=["EWM50"],
+            )
+
+    def test_unsupported_edition_coerced_only_under_legacy(self) -> None:
         with self.assertWarns(IECWindWarning):
             params = _build_parameters(
                 si_unit=True,
@@ -115,6 +135,7 @@ class ValidationTests(WorkspaceTestCaseMixin, unittest.TestCase):
                 vrated_raw=10.0,
                 vout_raw=24.0,
                 conditions=["EWM50"],
+                legacy=True,
             )
         self.assertEqual(params.iec_edition, 3)
         self.assertEqual(params.alpha, 0.14)
@@ -122,7 +143,7 @@ class ValidationTests(WorkspaceTestCaseMixin, unittest.TestCase):
     def test_generate_all_skips_invalid_conditions(self) -> None:
         tmp = self.workspace_tempdir()
         params = default_parameters(conditions=["EWM50", "ABC123", "EWSV+99.0"])
-        result = generate_all(params, output_dir=tmp)
+        result = generate_all(params, output_dir=tmp, strict=False)
         self.assertEqual(result.count, 1)
         self.assertEqual(len(result), 1)
         self.assertFalse(result.ok)
@@ -134,3 +155,51 @@ class ValidationTests(WorkspaceTestCaseMixin, unittest.TestCase):
         params = default_parameters(conditions=["EWM50", "ABC123"])
         with self.assertRaisesRegex(ValueError, "Unknown condition type 'ABC'"):
             generate_all(params, output_dir=tmp, strict=True)
+
+
+def _valid_kwargs(**overrides):
+    base = dict(
+        si_unit=True,
+        t1=40.0,
+        wtc=2,
+        catg="B",
+        slope_deg=0.0,
+        iec_edition=3,
+        hh=80.0,
+        dia=80.0,
+        vin=4.0,
+        vrated=10.0,
+        vout=24.0,
+        conditions=["EWM50"],
+    )
+    base.update(overrides)
+    return base
+
+
+class DirectConstructionTests(unittest.TestCase):
+    """IECParameters must be impossible to construct in an invalid state."""
+
+    def test_valid_parameters_construct(self) -> None:
+        params = IECParameters(**_valid_kwargs())
+        self.assertEqual(params.conditions, ("EWM50",))
+
+    def test_conditions_are_stored_immutably(self) -> None:
+        params = IECParameters(**_valid_kwargs(conditions=["EWM50", "NWP10.0"]))
+        self.assertIsInstance(params.conditions, tuple)
+        with self.assertRaises(dataclasses.FrozenInstanceError):
+            params.vrated = 99.0  # type: ignore[misc]
+
+    def test_invalid_fields_are_rejected(self) -> None:
+        cases = {
+            "class": _valid_kwargs(wtc=4),
+            "category": _valid_kwargs(catg="Z"),
+            "edition": _valid_kwargs(iec_edition=2),
+            "geometry": _valid_kwargs(hh=30.0, dia=80.0),
+            "speed_order": _valid_kwargs(vin=10.0, vrated=4.0),
+            "non_finite": _valid_kwargs(vrated=float("nan")),
+            "negative_diameter": _valid_kwargs(dia=-1.0),
+        }
+        for name, kwargs in cases.items():
+            with self.subTest(case=name):
+                with self.assertRaises(ValueError):
+                    IECParameters(**kwargs)

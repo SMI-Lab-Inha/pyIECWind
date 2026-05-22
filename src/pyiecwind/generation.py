@@ -261,17 +261,22 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
-    match = re.match(r"^EOG([IOR])([+-]?\d*\.?\d*)$", code)
+    # A speed modifier is only meaningful for the rated-speed (R) reference; the
+    # grammar therefore rejects modifiers on the cut-in (I) and cut-out (O) cases
+    # rather than silently ignoring them.
+    match = re.match(r"^EOG(?:([IO])|R([+-]?\d*\.?\d*))$", code)
     if not match:
-        raise ValueError(f"Cannot parse EOG condition '{code}'. Expected format: EOG[I/O/R][+/-speed_modifier]")
+        raise ValueError(
+            f"Cannot parse EOG condition '{code}'. Expected format: EOGI, EOGO, EOGR, or EOGR[+/-speed_modifier]"
+        )
 
-    speed_key = match.group(1)
-    modifier_text = match.group(2)
-    if speed_key == "I":
+    reference = match.group(1)
+    if reference == "I":
         vhub = params.vin
-    elif speed_key == "O":
+    elif reference == "O":
         vhub = params.vout
     else:
+        modifier_text = match.group(2)
         speed_modifier = (float(modifier_text) / params.len_convert) if modifier_text else 0.0
         if abs(speed_modifier) > 2.0:
             raise ValueError(
@@ -305,18 +310,23 @@ def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
-    match = re.match(r"^EDC([+-])([IOR])([+-]?\d*\.?\d*)$", code)
+    # As with EOG, a speed modifier is only valid for the rated-speed (R)
+    # reference; modifiers on I/O are rejected instead of being ignored.
+    match = re.match(r"^EDC([+-])(?:([IO])|R([+-]?\d*\.?\d*))$", code)
     if not match:
-        raise ValueError(f"Cannot parse EDC condition '{code}'. Expected format: EDC[+/-][I/O/R][+/-speed_modifier]")
+        raise ValueError(
+            f"Cannot parse EDC condition '{code}'. "
+            f"Expected format: EDC[+/-]I, EDC[+/-]O, EDC[+/-]R, or EDC[+/-]R[+/-speed_modifier]"
+        )
 
     dir_sign = 1.0 if match.group(1) == "+" else -1.0
-    speed_key = match.group(2)
-    modifier_text = match.group(3)
-    if speed_key == "I":
+    reference = match.group(2)
+    if reference == "I":
         vhub = params.vin
-    elif speed_key == "O":
+    elif reference == "O":
         vhub = params.vout
     else:
+        modifier_text = match.group(3)
         speed_modifier = (float(modifier_text) / params.len_convert) if modifier_text else 0.0
         if abs(speed_modifier) > 2.0:
             raise ValueError(
@@ -401,13 +411,15 @@ def generate_all(
     params: IECParameters,
     output_dir: str | Path | None = None,
     *,
-    strict: bool = False,
+    strict: bool = True,
 ) -> GenerationResult:
     """Generate every condition in ``params``.
 
-    Returns a :class:`GenerationResult` describing the files written and any
-    conditions that failed. With ``strict=True`` the first invalid condition
-    raises :class:`ValueError` instead of being collected.
+    Fails closed: by default (``strict=True``) the first invalid condition raises
+    :class:`ValueError`, so a scientific caller never silently gets partial
+    output. Pass ``strict=False`` to instead collect failures into the returned
+    :class:`GenerationResult` (used by the CLI, which reports them and chooses an
+    exit code).
     """
 
     generated: list[Path] = []
@@ -433,7 +445,7 @@ def generate_from_input_file(
     input_file: str | Path,
     *,
     output_dir: str | Path | None = None,
-    strict: bool = False,
+    strict: bool = True,
 ) -> tuple[IECParameters, GenerationResult]:
     params = parse_input_file(input_file)
     return params, generate_all(params, output_dir=output_dir, strict=strict)

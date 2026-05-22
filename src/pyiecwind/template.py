@@ -99,14 +99,14 @@ def default_template_text() -> str:
             vin=4.0,
             vrated=10.0,
             vout=24.0,
-            conditions=[
+            conditions=(
                 "ECD+R",
                 "EWSV+12.0",
                 "EOGR+2.0",
                 "EDC+R",
                 "NWP23.7",
                 "EWM50",
-            ],
+            ),
         )
     )
 

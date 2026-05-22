@@ -130,25 +130,39 @@ def _run_wizard(args: argparse.Namespace) -> int:
     print("Press Enter to accept the defaults shown in brackets.\n")
 
     si_unit = _prompt_yes_no("Use SI units (m, m/s)?", True)
+    factor = 1.0 if si_unit else 3.2808
+
+    # Collect every field first, then construct the (frozen, validated)
+    # IECParameters exactly once -- the object can never exist in an invalid state.
+    t1 = _prompt_float("Transient start time T1 [s]", 40.0)
+    wtc = _prompt_int("Wind turbine class", 2, {1, 2, 3})
+    catg = _prompt_choice("Turbulence category", "B", {"A", "B", "C"})
+    slope_deg = _prompt_float("Inflow inclination angle [deg]", 0.0)
+    iec_edition = _prompt_int("IEC edition for alpha", 3, {1, 3})
+    hh = _prompt_float("Hub height", 80.0) / factor
+    dia = _prompt_float("Rotor diameter", 80.0) / factor
+    vin = _prompt_float("Cut-in wind speed", 4.0) / factor
+    vrated = _prompt_float("Rated wind speed", 10.0) / factor
+    vout = _prompt_float("Cut-out wind speed", 24.0) / factor
+
+    conditions = [_build_condition()]
+    while _prompt_yes_no("Add another condition?", False):
+        conditions.append(_build_condition())
+
     params = IECParameters(
         si_unit=si_unit,
-        t1=_prompt_float("Transient start time T1 [s]", 40.0),
-        wtc=_prompt_int("Wind turbine class", 2, {1, 2, 3}),
-        catg=_prompt_choice("Turbulence category", "B", {"A", "B", "C"}),
-        slope_deg=_prompt_float("Inflow inclination angle [deg]", 0.0),
-        iec_edition=_prompt_int("IEC edition for alpha", 3, {1, 3}),
-        hh=_prompt_float("Hub height", 80.0) / (1.0 if si_unit else 3.2808),
-        dia=_prompt_float("Rotor diameter", 80.0) / (1.0 if si_unit else 3.2808),
-        vin=_prompt_float("Cut-in wind speed", 4.0) / (1.0 if si_unit else 3.2808),
-        vrated=_prompt_float("Rated wind speed", 10.0) / (1.0 if si_unit else 3.2808),
-        vout=_prompt_float("Cut-out wind speed", 24.0) / (1.0 if si_unit else 3.2808),
-        conditions=[],
+        t1=t1,
+        wtc=wtc,
+        catg=catg,
+        slope_deg=slope_deg,
+        iec_edition=iec_edition,
+        hh=hh,
+        dia=dia,
+        vin=vin,
+        vrated=vrated,
+        vout=vout,
+        conditions=tuple(conditions),
     )
-
-    while True:
-        params.conditions.append(_build_condition())
-        if not _prompt_yes_no("Add another condition?", False):
-            break
 
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,7 +172,7 @@ def _run_wizard(args: argparse.Namespace) -> int:
         input_path = output_dir / args.save_input
         input_path.write_text(_parameters_to_input_text(params), encoding="utf-8")
 
-    result = generate_all(params, output_dir=output_dir)
+    result = generate_all(params, output_dir=output_dir, strict=False)
     _report_result(result)
     print(f"\nGenerated {result.count} wind file(s) in {output_dir}")
     if input_path is not None:
@@ -197,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command is None:
-        params, result = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".")
+        params, result = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".", strict=False)
         print(f"Read {len(params.conditions)} condition(s) from '{DEFAULT_INPUT_FILENAME}'.")
         _report_result(result)
         print(params.summary())
@@ -205,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.ok else 1
 
     if args.command == "run":
-        params, result = generate_from_input_file(args.input_file, output_dir=args.output_dir)
+        params, result = generate_from_input_file(args.input_file, output_dir=args.output_dir, strict=False)
         print(f"Read {len(params.conditions)} condition(s) from '{args.input_file}'.")
         _report_result(result)
         print(params.summary())

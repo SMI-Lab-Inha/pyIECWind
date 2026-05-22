@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _distribution_version
 
@@ -68,9 +68,22 @@ CASE_ROW_COMMENTS = {
 }
 
 
-@dataclass
+VALID_CLASSES = (1, 2, 3)
+VALID_CATEGORIES = ("A", "B", "C")
+VALID_EDITIONS = (1, 3)
+
+
+@dataclass(frozen=True)
 class IECParameters:
-    """Validated input parameters stored internally in SI units."""
+    """Validated, immutable input parameters stored internally in SI units.
+
+    Construction is the single validation gate: every public path (the parser,
+    the wizard, direct API use) goes through ``__post_init__``, which enforces the
+    IEC turbine class/category/edition, finite and positive geometry, and a
+    physically ordered cut-in < rated < cut-out speed range. A frozen dataclass
+    with a tuple of ``conditions`` makes an invalid object impossible to create
+    and impossible to mutate into one afterwards.
+    """
 
     si_unit: bool
     t1: float
@@ -83,7 +96,35 @@ class IECParameters:
     vin: float
     vrated: float
     vout: float
-    conditions: list[str] = field(default_factory=list)
+    conditions: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        # Normalise the category before validating, then freeze conditions as a tuple.
+        object.__setattr__(self, "catg", str(self.catg).upper())
+        object.__setattr__(self, "conditions", tuple(self.conditions))
+
+        for name in ("t1", "slope_deg", "hh", "dia", "vin", "vrated", "vout"):
+            value = getattr(self, name)
+            if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                raise ValueError(f"{name} must be a finite number. Got: {value!r}")
+
+        if self.wtc not in VALID_CLASSES:
+            raise ValueError(f"Wind turbine class must be 1, 2, or 3. Got: {self.wtc!r}")
+        if self.catg not in VALID_CATEGORIES:
+            raise ValueError(f"Turbulence category must be A, B, or C. Got: {self.catg!r}")
+        if self.iec_edition not in VALID_EDITIONS:
+            raise ValueError(f"IEC edition must be 1 or 3. Got: {self.iec_edition!r}")
+
+        if self.dia <= 0.0:
+            raise ValueError(f"Rotor diameter must be positive. Got: {self.dia}")
+        if self.hh <= self.dia / 2.0:
+            raise ValueError(f"Hub height ({self.hh}) must be greater than rotor radius ({self.dia / 2.0:.3f}).")
+
+        if not (0.0 < self.vin < self.vrated < self.vout):
+            raise ValueError(
+                "Operating speeds must satisfy 0 < cut-in < rated < cut-out. "
+                f"Got vin={self.vin}, vrated={self.vrated}, vout={self.vout}."
+            )
 
     @property
     def len_convert(self) -> float:
