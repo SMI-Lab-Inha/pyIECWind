@@ -8,8 +8,7 @@ package:
 
 source:
   url: https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v{{ version }}.tar.gz
-  # PLACEHOLDER sha256 - recompute from the v0.1.1 tag archive (see docs/deployment.rst).
-  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256: 0e3711b118354211b6039dba4edaee4545ab65d935e93ba9a28f490ef14f35e4
 
 build:
   noarch: python
