@@ -32,4 +32,27 @@ First public release of `pyIECWind`.
 
 ## Unreleased
 
-- Future changes will be tracked here
+### Added
+
+- `__version__` exposed on the package, single-sourced from package metadata
+- Structured generation results (`GenerationResult`, `GenerationError`) and a
+  `strict=` mode on `generate_all` / `generate_from_input_file`
+- `IECWindWarning` category for advisory validation issues (escapable to errors)
+- `--continue-on-error` flag on the `run` command; the CLI now exits nonzero when
+  conditions fail to generate
+- Golden-reference `.wnd` corpus under `tests/golden/` and golden + property/invariant
+  test suites locking numeric output
+- Developer tooling configuration (ruff, mypy, pytest-cov with a 90% coverage gate)
+- Sphinx documentation (API reference, architecture, and verification matrix)
+- Cross-platform CI matrix (Linux/macOS/Windows × Python 3.10–3.13) with lint,
+  type-check, coverage gate, wheel build/smoke, and docs build
+
+### Changed
+
+- Library code no longer prints; all user-facing output is owned by the CLI
+- Generators return the written `Path`; `write_template` returns its path
+- The `.wnd` header version stamp now reflects the single-sourced package version
+
+### Fixed
+
+- Version drift between `models.py` (1.0.0) and `pyproject.toml` (0.1.0)
