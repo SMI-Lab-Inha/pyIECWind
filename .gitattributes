@@ -1,0 +1,3 @@
+# Golden reference output is byte-stable: keep LF in the repo and working tree
+# so the corpus is identical across platforms.
+tests/golden/**/*.wnd text eol=lf

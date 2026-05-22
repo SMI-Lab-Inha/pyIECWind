@@ -79,7 +79,7 @@ Add pyiecwind
 
 ## Suggested PR Body
 
-Use the text in [`recipe/STAGED_RECIPES_PR_BODY.md`](../recipe/STAGED_RECIPES_PR_BODY.md).
+Use the text in `recipe/STAGED_RECIPES_PR_BODY.md` (in the repository root).
 
 ## After Feedstock Creation
 

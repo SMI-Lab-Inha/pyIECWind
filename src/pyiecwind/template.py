@@ -7,6 +7,8 @@ from pathlib import Path
 from .models import CASE_ROW_COMMENTS, CASE_TYPE_ORDER, DEFAULT_TEMPLATE_FILENAME, IECParameters
 from .parsing import _group_conditions_by_type
 
+__all__ = ["format_openfast_input", "default_template_text", "write_template"]
+
 
 def format_openfast_input(params: IECParameters) -> str:
     """Render parameters in a readable OpenFAST-style layout."""
@@ -86,6 +88,8 @@ def format_openfast_input(params: IECParameters) -> str:
 
 
 def default_template_text() -> str:
+    """Return the text of a commented example input file with sensible defaults."""
+
     return format_openfast_input(
         IECParameters(
             si_unit=True,
@@ -99,21 +103,21 @@ def default_template_text() -> str:
             vin=4.0,
             vrated=10.0,
             vout=24.0,
-            conditions=[
+            conditions=(
                 "ECD+R",
                 "EWSV+12.0",
                 "EOGR+2.0",
                 "EDC+R",
                 "NWP23.7",
                 "EWM50",
-            ],
+            ),
         )
     )
 
 
-def write_template(dest: str | Path = DEFAULT_TEMPLATE_FILENAME) -> None:
+def write_template(dest: str | Path = DEFAULT_TEMPLATE_FILENAME) -> Path:
+    """Write a commented template input file and return its path."""
+
     path = Path(dest)
     path.write_text(default_template_text(), encoding="utf-8")
-    print(f"Template written to: {path}")
-    print("Edit the values and case rows, then run:")
-    print(f"  pyiecwind run {path}")
+    return path

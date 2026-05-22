@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Modern Python package for legacy IECWind-style IEC wind-condition generation for OpenFAST InflowWind."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = ["numpy>=1.24"]
 authors = [
   { name = "Jae Hoon Seo" }
@@ -18,7 +19,6 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering :: Physics",
@@ -31,6 +31,22 @@ Repository = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Issues = "https://github.com/SMI-Lab-Inha/pyIECWind/issues"
 Documentation = "https://github.com/SMI-Lab-Inha/pyIECWind#readme"
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "hypothesis>=6.0",
+  "ruff>=0.4",
+  "mypy>=1.8",
+  "build>=1.0",
+  "twine>=5.0",
+]
+docs = [
+  "sphinx>=7.0",
+  "myst-parser>=2.0",
+  "furo>=2024.1",
+]
+
 [project.scripts]
 pyiecwind = "pyiecwind.cli:main"
 
@@ -39,3 +55,38 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures use fixed-width OpenFAST-style rows that must not be reflowed.
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["pyiecwind"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+]

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import warnings
+from collections.abc import Sequence
 from pathlib import Path
 
 from .models import (
@@ -10,10 +12,15 @@ from .models import (
     CASE_TYPE_ORDER,
     DEFAULT_INPUT_FILENAME,
     FALSE_TOKENS,
-    IECParameters,
     NONE_TOKENS,
     TRUE_TOKENS,
+    IECParameters,
+    IECWindWarning,
 )
+
+# `parse_input_file` is the only public name here; everything else is internal
+# (see docs/architecture.md for the module-surface convention).
+__all__ = ["parse_input_file"]
 
 FIELD_ALIASES = {
     "si_unit": "si_unit",
@@ -57,6 +64,28 @@ def _normalize_key(raw: str) -> str:
     return raw.strip().lower().replace("-", "_").replace(" ", "_")
 
 
+_SI_TRUE_TOKENS = {"T", "TRUE", ".TRUE.", "YES", "Y", "SI", "METRIC", "1"}
+_SI_FALSE_TOKENS = {"F", "FALSE", ".FALSE.", "NO", "N", "ENGLISH", "IMPERIAL", "US", "0"}
+
+
+def _parse_si_unit(raw: str, *, lineno: int | None = None) -> bool:
+    """Parse the unit-system flag strictly, rejecting unrecognised tokens.
+
+    Unknown values are an error rather than being silently treated as English
+    units, which previously hid typos like ``si_unit = maybe``.
+    """
+
+    token = raw.strip().upper()
+    if token in _SI_TRUE_TOKENS:
+        return True
+    if token in _SI_FALSE_TOKENS:
+        return False
+    location = f" on line {lineno}" if lineno is not None else ""
+    raise ValueError(
+        f"Cannot interpret si_unit value {raw!r}{location}. Use a boolean such as True/False (SI vs. English units)."
+    )
+
+
 def _normalize_case_options_text(text: str) -> str:
     text = text.strip()
     if text.startswith("[") and text.endswith("]"):
@@ -97,9 +126,7 @@ def _parse_case_row(line: str, *, lineno: int) -> list[str]:
     if enabled in NONE_TOKENS or enabled in FALSE_TOKENS:
         return []
     if enabled not in TRUE_TOKENS:
-        raise ValueError(
-            f"Case enable flag on line {lineno} must be True, False, or None. Got: {parts[1]!r}"
-        )
+        raise ValueError(f"Case enable flag on line {lineno} must be True, False, or None. Got: {parts[1]!r}")
 
     options = _split_case_options(options_text)
     if not options:
@@ -107,8 +134,8 @@ def _parse_case_row(line: str, *, lineno: int) -> list[str]:
     return _expand_case_row(case_type, options, lineno=lineno)
 
 
-def _group_conditions_by_type(conditions: list[str]) -> dict[str, list[str]]:
-    grouped = {case_type: [] for case_type in CASE_TYPE_ORDER}
+def _group_conditions_by_type(conditions: Sequence[str]) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {case_type: [] for case_type in CASE_TYPE_ORDER}
     for code in conditions:
         prefix = code[:3].upper()
         if prefix in grouped:
@@ -124,9 +151,7 @@ def _parse_condition_value(value: str, *, lineno: int) -> str | None:
     first = tokens[0].upper()
     if first in TRUE_TOKENS | FALSE_TOKENS:
         if len(tokens) < 2:
-            raise ValueError(
-                f"Condition toggle on line {lineno} must be followed by a condition code."
-            )
+            raise ValueError(f"Condition toggle on line {lineno} must be followed by a condition code.")
         return " ".join(tokens[1:]).upper() if first in TRUE_TOKENS else None
     if first in NONE_TOKENS:
         return None
@@ -153,6 +178,7 @@ def _build_parameters(
     vrated_raw: float,
     vout_raw: float,
     conditions: list[str],
+    legacy: bool = False,
 ) -> IECParameters:
     len_convert = 1.0 if si_unit else 3.2808
 
@@ -164,15 +190,25 @@ def _build_parameters(
         raise ValueError(f"Turbulence category must be A, B, or C. Got: {catg!r}")
 
     if abs(slope_deg) > 8.0:
-        print(
-            "WARNING: IEC specifies a maximum inclination angle of 8 deg.\n"
-            f"         You specified {slope_deg:.2f} degrees."
+        warnings.warn(
+            f"IEC specifies a maximum inclination angle of 8 deg; you specified {slope_deg:.2f} degrees.",
+            IECWindWarning,
+            stacklevel=2,
         )
 
     if iec_edition not in (1, 3):
-        print(
-            f"WARNING: IEC edition should be 1 or 3. Got: {iec_edition}. "
-            "Wind shear exponent will default to Alpha=0.14 (Ed.3)."
+        # Fail closed for a scientific tool: an unsupported edition is an error
+        # unless the caller explicitly opts into legacy coercion.
+        if not legacy:
+            raise ValueError(
+                f"Unsupported IEC edition {iec_edition}; only editions 1 and 3 are supported. "
+                "Pass legacy=True to coerce unsupported editions to edition 3."
+            )
+        warnings.warn(
+            f"IEC edition should be 1 or 3. Got: {iec_edition}. "
+            "Coercing to edition 3 (Alpha=0.14) because legacy mode is enabled.",
+            IECWindWarning,
+            stacklevel=2,
         )
         iec_edition = 3
 
@@ -208,11 +244,11 @@ def _build_parameters(
         vin=vin,
         vrated=vrated,
         vout=vout,
-        conditions=conditions,
+        conditions=tuple(conditions),
     )
 
 
-def _finalize_parsed_fields(fields: dict[str, str], conditions: list[str]) -> IECParameters:
+def _finalize_parsed_fields(fields: dict[str, str], conditions: list[str], *, legacy: bool = False) -> IECParameters:
     required = [
         "si_unit",
         "t1",
@@ -230,11 +266,8 @@ def _finalize_parsed_fields(fields: dict[str, str], conditions: list[str]) -> IE
     if missing:
         raise ValueError(f"Missing required input field(s): {', '.join(missing)}.")
 
-    si_raw = fields["si_unit"].strip().upper()
-    si_unit = si_raw in ("T", "TRUE", ".TRUE.", "YES", "Y", "SI", "METRIC")
-
     return _build_parameters(
-        si_unit=si_unit,
+        si_unit=_parse_si_unit(fields["si_unit"]),
         t1=float(fields["t1"]),
         wtc=int(fields["wtc"]),
         catg=fields["catg"],
@@ -246,10 +279,11 @@ def _finalize_parsed_fields(fields: dict[str, str], conditions: list[str]) -> IE
         vrated_raw=float(fields["vrated"]),
         vout_raw=float(fields["vout"]),
         conditions=conditions,
+        legacy=legacy,
     )
 
 
-def _parse_legacy_input_file(raw_lines: list[str]) -> IECParameters:
+def _parse_legacy_input_file(raw_lines: list[str], *, legacy: bool = False) -> IECParameters:
     while len(raw_lines) < 17:
         raw_lines.append("")
 
@@ -262,11 +296,10 @@ def _parse_legacy_input_file(raw_lines: list[str]) -> IECParameters:
     def line_val(idx: int, name: str) -> str:
         try:
             return first_token(raw_lines[idx])
-        except (IndexError, ValueError):
-            raise ValueError(f"Premature end of file reading '{name}' at line {idx + 1}.")
+        except (IndexError, ValueError) as exc:
+            raise ValueError(f"Premature end of file reading '{name}' at line {idx + 1}.") from exc
 
-    si_raw = line_val(2, "units specifier").upper()
-    si_unit = si_raw in ("T", "TRUE", ".TRUE.")
+    si_unit = _parse_si_unit(line_val(2, "units specifier"), lineno=3)
 
     conditions: list[str] = []
     for raw in raw_lines[16:]:
@@ -288,10 +321,11 @@ def _parse_legacy_input_file(raw_lines: list[str]) -> IECParameters:
         vrated_raw=float(line_val(13, "rated wind speed")),
         vout_raw=float(line_val(14, "cut-out wind speed")),
         conditions=conditions,
+        legacy=legacy,
     )
 
 
-def _parse_keyed_input_file(raw_lines: list[str]) -> IECParameters:
+def _parse_keyed_input_file(raw_lines: list[str], *, legacy: bool = False) -> IECParameters:
     fields: dict[str, str] = {}
     conditions: list[str] = []
     in_conditions = False
@@ -334,10 +368,10 @@ def _parse_keyed_input_file(raw_lines: list[str]) -> IECParameters:
         else:
             fields[key] = value
 
-    return _finalize_parsed_fields(fields, conditions)
+    return _finalize_parsed_fields(fields, conditions, legacy=legacy)
 
 
-def _parse_openfast_input_file(raw_lines: list[str]) -> IECParameters:
+def _parse_openfast_input_file(raw_lines: list[str], *, legacy: bool = False) -> IECParameters:
     fields: dict[str, str] = {}
     conditions: list[str] = []
     in_cases_section = False
@@ -377,10 +411,17 @@ def _parse_openfast_input_file(raw_lines: list[str]) -> IECParameters:
             raise ValueError(f"Missing value for '{key}' on line {lineno}.")
         fields[key] = value
 
-    return _finalize_parsed_fields(fields, conditions)
+    return _finalize_parsed_fields(fields, conditions, legacy=legacy)
 
 
-def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME) -> IECParameters:
+def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: bool = False) -> IECParameters:
+    """Read an input file and return validated :class:`IECParameters`.
+
+    The OpenFAST-style table, keyed, and legacy positional layouts are auto-detected.
+    With ``legacy=True``, unsupported IEC editions are coerced to edition 3 (with a
+    warning) instead of raising. Raises ``FileNotFoundError`` if the file is missing
+    and ``ValueError`` for malformed or out-of-range input.
+    """
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(
@@ -401,11 +442,7 @@ def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME) -> IECParame
     )
 
     if openfast_format:
-        params = _parse_openfast_input_file(raw_lines)
-    elif keyed_format:
-        params = _parse_keyed_input_file(raw_lines)
-    else:
-        params = _parse_legacy_input_file(raw_lines)
-
-    print(f"Read {len(params.conditions)} condition(s) from '{path}'.")
-    return params
+        return _parse_openfast_input_file(raw_lines, legacy=legacy)
+    if keyed_format:
+        return _parse_keyed_input_file(raw_lines, legacy=legacy)
+    return _parse_legacy_input_file(raw_lines, legacy=legacy)

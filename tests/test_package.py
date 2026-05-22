@@ -3,10 +3,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from helpers import WorkspaceTestCaseMixin
 from pyiecwind import DEFAULT_INPUT_FILENAME, DEFAULT_TEMPLATE_FILENAME
 from pyiecwind.core import format_openfast_input, generate_from_input_file, parse_input_file, write_template
-
-from helpers import WorkspaceTestCaseMixin
 
 
 class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
@@ -43,6 +42,12 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
     def test_public_default_filenames_match_cleanup_conventions(self) -> None:
         self.assertEqual(DEFAULT_INPUT_FILENAME, "pyiecwind.ipt")
         self.assertEqual(DEFAULT_TEMPLATE_FILENAME, "pyiecwind_template.ipt")
+
+    def test_module_entrypoint_is_importable(self) -> None:
+        import importlib
+
+        module = importlib.import_module("pyiecwind.__main__")
+        self.assertTrue(callable(module.main))
 
     def test_generate_from_input_file_writes_outputs(self) -> None:
         tmp_path = self.workspace_tempdir()
@@ -89,9 +94,9 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
             encoding="utf-8",
         )
 
-        params, count = generate_from_input_file(input_file, output_dir=output_dir)
+        params, result = generate_from_input_file(input_file, output_dir=output_dir)
 
-        self.assertEqual(count, 2)
+        self.assertEqual(result.count, 2)
         self.assertEqual(params.wtc, 2)
         self.assertTrue((output_dir / "EWM50.wnd").exists())
         self.assertTrue((output_dir / "NWP10.0.wnd").exists())
@@ -101,9 +106,7 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
         tmp_path = self.workspace_tempdir()
         input_file = tmp_path / "roundtrip.ipt"
         input_file.write_text(
-            format_openfast_input(
-                parse_input_file(Path("examples") / "sample_case.ipt")
-            ),
+            format_openfast_input(parse_input_file(Path("examples") / "sample_case.ipt")),
             encoding="utf-8",
         )
 

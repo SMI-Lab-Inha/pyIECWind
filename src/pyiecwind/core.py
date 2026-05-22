@@ -1,8 +1,25 @@
-"""Compatibility layer exposing the historical pyIECWind API from modular internals."""
+"""Compatibility facade re-exporting the stable public pyIECWind API.
+
+Only supported, public names live here. Implementation helpers (the underscored
+parsing/validation functions, alias tables, and token sets used internally) are
+intentionally *not* re-exported, so they remain free to change without breaking
+callers. Import internals from their own modules if you must.
+"""
 
 from __future__ import annotations
 
-from .generation import EWM_ALPHA, gen_ecd, gen_edc, gen_eog, gen_ewm, gen_ews, gen_nwp, generate_all, generate_from_input_file
+from .generation import (
+    GenerationError,
+    GenerationResult,
+    gen_ecd,
+    gen_edc,
+    gen_eog,
+    gen_ewm,
+    gen_ews,
+    gen_nwp,
+    generate_all,
+    generate_from_input_file,
+)
 from .models import (
     BETA,
     CASE_PREFIXES,
@@ -11,26 +28,14 @@ from .models import (
     DEFAULT_INPUT_FILENAME,
     DEFAULT_TEMPLATE_FILENAME,
     DT,
-    IECParameters,
-    NONE_TOKENS,
+    EWM_ALPHA,
     PI,
-    TRUE_TOKENS,
-    FALSE_TOKENS,
     VCG,
     VERSION,
+    IECParameters,
+    IECWindWarning,
 )
-from .parsing import (
-    FIELD_ALIASES,
-    _append_condition_value,
-    _build_parameters,
-    _expand_case_row,
-    _group_conditions_by_type,
-    _normalize_case_options_text,
-    _normalize_key,
-    _parse_case_row,
-    _parse_condition_value,
-    parse_input_file,
-)
+from .parsing import parse_input_file
 from .template import format_openfast_input, write_template
 
 __all__ = [
@@ -42,22 +47,13 @@ __all__ = [
     "DEFAULT_TEMPLATE_FILENAME",
     "DT",
     "EWM_ALPHA",
-    "FALSE_TOKENS",
-    "FIELD_ALIASES",
+    "GenerationError",
+    "GenerationResult",
     "IECParameters",
-    "NONE_TOKENS",
+    "IECWindWarning",
     "PI",
-    "TRUE_TOKENS",
     "VCG",
     "VERSION",
-    "_append_condition_value",
-    "_build_parameters",
-    "_expand_case_row",
-    "_group_conditions_by_type",
-    "_normalize_case_options_text",
-    "_normalize_key",
-    "_parse_case_row",
-    "_parse_condition_value",
     "format_openfast_input",
     "gen_ecd",
     "gen_edc",

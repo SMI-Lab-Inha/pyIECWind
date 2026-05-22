@@ -144,18 +144,32 @@ environment.yml             conda environment definition
 pyproject.toml              package metadata
 ```
 
-## Testing
+## Testing and development
 
-Run the full test suite:
+Install the development tooling, then run the same checks as CI:
 
 ```bash
-PYTHONPATH=src:tests python -m unittest discover -s tests -v
+python -m pip install -e ".[dev]"
+ruff check .            # lint
+ruff format --check .   # formatting
+mypy                    # type check
+pytest --cov=pyiecwind  # tests + 90% coverage gate
 ```
 
-On Windows PowerShell:
+`pytest` is configured (in `pyproject.toml`) with the source and test paths and
+the coverage gate, so no `PYTHONPATH` is needed. The suite includes a golden
+`.wnd` regression corpus and an independent oracle layer; see
+[docs/verification.md](docs/verification.md). To build the docs:
 
-```powershell
-$env:PYTHONPATH='src;tests'; python -m unittest discover -s tests -v
+```bash
+python -m pip install -e ".[docs]"
+sphinx-build -W -b html docs docs/_build/html
+```
+
+To time generation over the full scenario matrix:
+
+```bash
+python benchmarks/bench_generation.py
 ```
 
 ## Notes

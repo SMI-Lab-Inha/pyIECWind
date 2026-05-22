@@ -4,12 +4,64 @@ from __future__ import annotations
 
 import math
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
-from .models import BETA, DT, EWM_ALPHA, IECParameters, PI, VCG, VERSION
+from .models import BETA, DT, EWM_ALPHA, PI, VCG, VERSION, IECParameters
 from .parsing import parse_input_file
+
+__all__ = [
+    "GenerationError",
+    "GenerationResult",
+    "gen_ecd",
+    "gen_edc",
+    "gen_eog",
+    "gen_ews",
+    "gen_nwp",
+    "gen_ewm",
+    "generate_all",
+    "generate_from_input_file",
+]
+
+
+@dataclass(frozen=True)
+class GenerationError:
+    """A single condition that could not be generated."""
+
+    code: str
+    message: str
+
+    def __str__(self) -> str:
+        return f"{self.code}: {self.message}"
+
+
+@dataclass(frozen=True)
+class GenerationResult:
+    """Outcome of a batch generation run.
+
+    ``generated`` holds the paths written successfully and ``errors`` holds the
+    conditions that were skipped (only populated when ``strict=False``).
+    """
+
+    generated: tuple[Path, ...] = ()
+    errors: tuple[GenerationError, ...] = ()
+
+    @property
+    def count(self) -> int:
+        """Number of files written."""
+
+        return len(self.generated)
+
+    @property
+    def ok(self) -> bool:
+        """True when every requested condition was generated."""
+
+        return not self.errors
+
+    def __len__(self) -> int:
+        return len(self.generated)
 
 
 class WindFileWriter:
@@ -68,7 +120,9 @@ class WindFileWriter:
 
     def slope_header(self) -> None:
         self._write("!")
-        self._write(f"!     The wind inflow inclination angle is {self.params.slope_deg:.1f} degrees to the horizontal.")
+        self._write(
+            f"!     The wind inflow inclination angle is {self.params.slope_deg:.1f} degrees to the horizontal."
+        )
 
     def nwp_header(self, vhub: float) -> None:
         p = self.params
@@ -110,9 +164,9 @@ class WindFileWriter:
         ]
         self._lines.append(self.TAB.join(f"{value:9.3f}" for value in values))
 
-    def save(self) -> None:
+    def save(self) -> Path:
         self.filepath.write_text("\n".join(self._lines) + "\n", encoding="utf-8")
-        print(f"  Generated: {self.filepath.name}")
+        return self.filepath
 
 
 def _transient_times(t1: float, duration: float) -> np.ndarray:
@@ -136,7 +190,11 @@ def _resolve_output_path(code: str, output_dir: str | Path | None = None) -> Pat
     return output_path / f"{code}.wnd"
 
 
-def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
+def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Coherent Gust with Direction Change (ECD) ``.wnd`` file.
+
+    ``code`` has the form ``ECD[+/-]R[+/-modifier]``. Returns the path written.
+    """
     match = re.match(r"^ECD([+-])R([+-]?\d*\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse ECD condition '{code}'. Expected format: ECD[+/-]R[+/-speed_modifier]")
@@ -144,7 +202,10 @@ def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = No
     dir_sign = 1.0 if match.group(1) == "+" else -1.0
     speed_modifier = (float(match.group(2)) / params.len_convert) if match.group(2) else 0.0
     if abs(speed_modifier) > 2.0:
-        raise ValueError(f"ECD speed modifier must not exceed +/-2.0 m/s. Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]")
+        raise ValueError(
+            f"ECD speed modifier must not exceed +/-2.0 m/s. "
+            f"Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]"
+        )
 
     vhub = params.vrated + speed_modifier
     if vhub > params.vref:
@@ -171,11 +232,18 @@ def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.col_headers()
     writer.data_row(0.0, vhub_h, 0.0, vhub_v0, 0.0, params.alpha, 0.0, 0.0)
     for index, time in enumerate(times):
-        writer.data_row(time, vhub_h, float(theta_t[index]), float(vertical[index]), 0.0, params.alpha, 0.0, float(gust_h[index]))
-    writer.save()
+        writer.data_row(
+            time, vhub_h, float(theta_t[index]), float(vertical[index]), 0.0, params.alpha, 0.0, float(gust_h[index])
+        )
+    return writer.save()
 
 
-def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
+def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Wind Shear (EWS) ``.wnd`` file.
+
+    ``code`` has the form ``EWS[V/H][+/-]<speed>`` (vertical or horizontal shear).
+    Returns the path written.
+    """
     match = re.match(r"^EWS([VH])([+-])(\d+\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse EWS condition '{code}'. Expected format: EWS[V/H][+/-][wind_speed]")
@@ -185,13 +253,15 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
     vhub = float(match.group(3)) / params.len_convert
     if vhub < params.vin or vhub > params.vout:
         raise ValueError(
-            f"EWS wind speed ({vhub * params.len_convert:.1f} {params.spd_unit}) must be between Vin ({params.vin * params.len_convert:.1f}) and Vout ({params.vout * params.len_convert:.1f}). [{code}]"
+            f"EWS wind speed ({vhub * params.len_convert:.1f} {params.spd_unit}) must be between "
+            f"Vin ({params.vin * params.len_convert:.1f}) and "
+            f"Vout ({params.vout * params.len_convert:.1f}). [{code}]"
         )
 
     vhub_h, vhub_v = _hub_components(vhub, params.slope_rad)
     sigma1 = _sigma1(params.turb_intensity, vhub)
     vg50 = BETA * sigma1
-    shr_max = 2.0 * (2.5 + 0.2 * vg50 * params.turb_rat ** 0.25) / vhub
+    shr_max = 2.0 * (2.5 + 0.2 * vg50 * params.turb_rat**0.25) / vhub
     duration = 12.0
     times = _transient_times(params.t1, duration)
     tau = times - params.t1
@@ -209,24 +279,37 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.data_row(0.0, vhub_h, 0.0, vhub_v, 0.0, params.alpha, 0.0, 0.0)
     for index, time in enumerate(times):
         writer.data_row(time, vhub_h, 0.0, vhub_v, float(h_shr[index]), params.alpha, float(v_shr[index]), 0.0)
-    writer.save()
+    return writer.save()
 
 
-def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
-    match = re.match(r"^EOG([IOR])([+-]?\d*\.?\d*)$", code)
+def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Operating Gust (EOG) ``.wnd`` file.
+
+    ``code`` is ``EOGI``, ``EOGO``, ``EOGR``, or ``EOGR[+/-modifier]``.
+    Returns the path written.
+    """
+    # A speed modifier is only meaningful for the rated-speed (R) reference; the
+    # grammar therefore rejects modifiers on the cut-in (I) and cut-out (O) cases
+    # rather than silently ignoring them.
+    match = re.match(r"^EOG(?:([IO])|R([+-]?\d*\.?\d*))$", code)
     if not match:
-        raise ValueError(f"Cannot parse EOG condition '{code}'. Expected format: EOG[I/O/R][+/-speed_modifier]")
+        raise ValueError(
+            f"Cannot parse EOG condition '{code}'. Expected format: EOGI, EOGO, EOGR, or EOGR[+/-speed_modifier]"
+        )
 
-    speed_key = match.group(1)
-    modifier_text = match.group(2)
-    if speed_key == "I":
+    reference = match.group(1)
+    if reference == "I":
         vhub = params.vin
-    elif speed_key == "O":
+    elif reference == "O":
         vhub = params.vout
     else:
+        modifier_text = match.group(2)
         speed_modifier = (float(modifier_text) / params.len_convert) if modifier_text else 0.0
         if abs(speed_modifier) > 2.0:
-            raise ValueError(f"EOG speed modifier must not exceed +/-2.0 m/s. Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]")
+            raise ValueError(
+                f"EOG speed modifier must not exceed +/-2.0 m/s. "
+                f"Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]"
+            )
         vhub = params.vrated + speed_modifier
 
     vhub_h, vhub_v0 = _hub_components(vhub, params.slope_rad)
@@ -250,25 +333,38 @@ def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.data_row(0.0, vhub_h, 0.0, vhub_v0, 0.0, params.alpha, 0.0, 0.0)
     for index, time in enumerate(times):
         writer.data_row(time, vhub_h, 0.0, float(vertical[index]), 0.0, params.alpha, 0.0, float(gust_h[index]))
-    writer.save()
+    return writer.save()
 
 
-def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
-    match = re.match(r"^EDC([+-])([IOR])([+-]?\d*\.?\d*)$", code)
+def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Direction Change (EDC) ``.wnd`` file.
+
+    ``code`` is ``EDC[+/-]I``, ``EDC[+/-]O``, ``EDC[+/-]R``, or
+    ``EDC[+/-]R[+/-modifier]``. Returns the path written.
+    """
+    # As with EOG, a speed modifier is only valid for the rated-speed (R)
+    # reference; modifiers on I/O are rejected instead of being ignored.
+    match = re.match(r"^EDC([+-])(?:([IO])|R([+-]?\d*\.?\d*))$", code)
     if not match:
-        raise ValueError(f"Cannot parse EDC condition '{code}'. Expected format: EDC[+/-][I/O/R][+/-speed_modifier]")
+        raise ValueError(
+            f"Cannot parse EDC condition '{code}'. "
+            f"Expected format: EDC[+/-]I, EDC[+/-]O, EDC[+/-]R, or EDC[+/-]R[+/-speed_modifier]"
+        )
 
     dir_sign = 1.0 if match.group(1) == "+" else -1.0
-    speed_key = match.group(2)
-    modifier_text = match.group(3)
-    if speed_key == "I":
+    reference = match.group(2)
+    if reference == "I":
         vhub = params.vin
-    elif speed_key == "O":
+    elif reference == "O":
         vhub = params.vout
     else:
+        modifier_text = match.group(3)
         speed_modifier = (float(modifier_text) / params.len_convert) if modifier_text else 0.0
         if abs(speed_modifier) > 2.0:
-            raise ValueError(f"EDC speed modifier must not exceed +/-2.0 m/s. Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]")
+            raise ValueError(
+                f"EDC speed modifier must not exceed +/-2.0 m/s. "
+                f"Got: {speed_modifier * params.len_convert:.2f} {params.spd_unit} [{code}]"
+            )
         vhub = params.vrated + speed_modifier
 
     vhub_h, vhub_v = _hub_components(vhub, params.slope_rad)
@@ -289,10 +385,14 @@ def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.data_row(0.0, vhub_h, 0.0, vhub_v, 0.0, params.alpha, 0.0, 0.0)
     for index, time in enumerate(times):
         writer.data_row(time, vhub_h, float(theta_t[index]), vhub_v, 0.0, params.alpha, 0.0, 0.0)
-    writer.save()
+    return writer.save()
 
 
-def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
+def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate a Normal Wind Profile (NWP) ``.wnd`` file.
+
+    ``code`` has the form ``NWP<speed>`` with the speed in m/s. Returns the path written.
+    """
     match = re.match(r"^NWP(\d+\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse NWP condition '{code}'. Expected format: NWP[wind_speed_in_m/s]")
@@ -307,10 +407,14 @@ def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.slope_header()
     writer.col_headers()
     writer.data_row(0.0, vhub_h, 0.0, vhub_v, 0.0, params.alpha, 0.0, 0.0)
-    writer.save()
+    return writer.save()
 
 
-def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = None) -> None:
+def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate a steady Extreme Wind Model (EWM) ``.wnd`` file.
+
+    ``code`` is ``EWM50`` (50-year) or ``EWM01`` (1-year). Returns the path written.
+    """
     match = re.match(r"^EWM(50|01)$", code)
     if not match:
         raise ValueError(f"Cannot parse EWM condition '{code}'. Expected format: EWM50 or EWM01")
@@ -330,7 +434,7 @@ def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = No
     writer.slope_header()
     writer.col_headers()
     writer.data_row(0.0, vhub_h, 0.0, vhub_v, 0.0, EWM_ALPHA, 0.0, 0.0)
-    writer.save()
+    return writer.save()
 
 
 _GENERATORS = {
@@ -343,25 +447,50 @@ _GENERATORS = {
 }
 
 
-def generate_all(params: IECParameters, output_dir: str | Path | None = None) -> int:
-    count = 0
+def generate_all(
+    params: IECParameters,
+    output_dir: str | Path | None = None,
+    *,
+    strict: bool = True,
+) -> GenerationResult:
+    """Generate every condition in ``params``.
+
+    Fails closed: by default (``strict=True``) the first invalid condition raises
+    :class:`ValueError`, so a scientific caller never silently gets partial
+    output. Pass ``strict=False`` to instead collect failures into the returned
+    :class:`GenerationResult` (used by the CLI, which reports them and chooses an
+    exit code).
+    """
+
+    generated: list[Path] = []
+    errors: list[GenerationError] = []
     for code in params.conditions:
         generator = _GENERATORS.get(code[:3])
         if generator is None:
-            print(f"ERROR: Unknown condition type '{code[:3]}' in code '{code}'. Skipping.")
+            message = f"Unknown condition type '{code[:3]}' in code '{code}'."
+            if strict:
+                raise ValueError(message)
+            errors.append(GenerationError(code, message))
             continue
         try:
-            generator(code, params, output_dir=output_dir)
-            count += 1
+            generated.append(generator(code, params, output_dir=output_dir))
         except ValueError as exc:
-            print(f"ERROR generating '{code}': {exc}")
-    return count
+            if strict:
+                raise
+            errors.append(GenerationError(code, str(exc)))
+    return GenerationResult(tuple(generated), tuple(errors))
 
 
 def generate_from_input_file(
     input_file: str | Path,
     *,
     output_dir: str | Path | None = None,
-) -> tuple[IECParameters, int]:
+    strict: bool = True,
+) -> tuple[IECParameters, GenerationResult]:
+    """Parse ``input_file`` and generate all of its conditions.
+
+    Returns the parsed :class:`IECParameters` and the :class:`GenerationResult`.
+    Like :func:`generate_all`, this fails closed (``strict=True``) by default.
+    """
     params = parse_input_file(input_file)
-    return params, generate_all(params, output_dir=output_dir)
+    return params, generate_all(params, output_dir=output_dir, strict=strict)

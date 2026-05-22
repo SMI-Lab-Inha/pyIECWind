@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import unittest
-from pathlib import Path
-
-from pyiecwind.core import _parse_case_row, parse_input_file
 
 from helpers import WorkspaceTestCaseMixin, openfast_case_table_text
+from pyiecwind.core import parse_input_file
+from pyiecwind.parsing import _parse_case_row
 
 
 class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
@@ -37,7 +36,7 @@ class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
         params = parse_input_file(path)
 
         self.assertEqual(
-            params.conditions,
+            list(params.conditions),
             [
                 "ECD+R",
                 "ECD-R",
@@ -70,7 +69,7 @@ class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
         )
 
         params = parse_input_file(path)
-        self.assertEqual(params.conditions, ["NWP10.0"])
+        self.assertEqual(list(params.conditions), ["NWP10.0"])
 
     def test_parse_keyed_format_is_still_supported(self) -> None:
         tmp = self.workspace_tempdir()
@@ -99,7 +98,89 @@ class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
         )
 
         params = parse_input_file(path)
-        self.assertEqual(params.conditions, ["EWM50", "NWP10.0"])
+        self.assertEqual(list(params.conditions), ["EWM50", "NWP10.0"])
+
+    def test_keyed_condition_toggles_are_honored(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "keyed.ipt"
+        path.write_text(
+            "\n".join(
+                [
+                    "si_unit = True",
+                    "t1 = 40.0",
+                    "wtc = 2",
+                    "catg = B",
+                    "slope_deg = 0.0",
+                    "iec_edition = 3",
+                    "hh = 80.0",
+                    "dia = 80.0",
+                    "vin = 4.0",
+                    "vrated = 10.0",
+                    "vout = 24.0",
+                    "conditions:",
+                    "  - True EWM50",
+                    "  - False EWM01",
+                    "  - None",
+                    "  - NWP10.0",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        params = parse_input_file(path)
+        self.assertEqual(list(params.conditions), ["EWM50", "NWP10.0"])
+
+    def test_missing_input_file_raises(self) -> None:
+        tmp = self.workspace_tempdir()
+        with self.assertRaises(FileNotFoundError):
+            parse_input_file(tmp / "does_not_exist.ipt")
+
+    def test_keyed_missing_required_field_raises(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "keyed.ipt"
+        path.write_text("si_unit = True\nt1 = 40.0\nconditions:\n  - EWM50\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Missing required input field"):
+            parse_input_file(path)
+
+    def test_keyed_unknown_key_raises(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "keyed.ipt"
+        path.write_text("mystery = 7\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Unknown input key"):
+            parse_input_file(path)
+
+    def test_unknown_si_unit_token_is_rejected(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "keyed.ipt"
+        path.write_text(
+            "\n".join(
+                [
+                    "si_unit = maybe",
+                    "t1 = 40.0",
+                    "wtc = 2",
+                    "catg = B",
+                    "slope_deg = 0.0",
+                    "iec_edition = 3",
+                    "hh = 80.0",
+                    "dia = 80.0",
+                    "vin = 4.0",
+                    "vrated = 10.0",
+                    "vout = 24.0",
+                    "conditions:",
+                    "  - EWM50",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "Cannot interpret si_unit"):
+            parse_input_file(path)
+
+    def test_legacy_premature_eof_raises(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "legacy.ipt"
+        path.write_text("\n".join(["header", "header", "TRUE", ""]), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            parse_input_file(path)
 
     def test_parse_legacy_format_is_still_supported(self) -> None:
         tmp = self.workspace_tempdir()
@@ -128,4 +209,4 @@ class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
         path.write_text("\n".join(legacy_lines), encoding="utf-8")
 
         params = parse_input_file(path)
-        self.assertEqual(params.conditions, ["EWM50", "NWP10.0"])
+        self.assertEqual(list(params.conditions), ["EWM50", "NWP10.0"])
