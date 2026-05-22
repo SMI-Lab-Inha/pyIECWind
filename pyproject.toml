@@ -31,6 +31,15 @@ Repository = "https://github.com/SMI-Lab-Inha/pyIECWind"
 Issues = "https://github.com/SMI-Lab-Inha/pyIECWind/issues"
 Documentation = "https://github.com/SMI-Lab-Inha/pyIECWind#readme"
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "ruff>=0.4",
+  "mypy>=1.8",
+  "build>=1.0",
+]
+
 [project.scripts]
 pyiecwind = "pyiecwind.cli:main"
 
@@ -39,3 +48,42 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures use fixed-width OpenFAST-style rows that must not be reflowed.
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+
+[tool.coverage.run]
+source = ["pyiecwind"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+]
