@@ -28,6 +28,48 @@ def _report_result(result: GenerationResult) -> None:
         print(f"  ERROR: {error}", file=sys.stderr)
 
 
+def _report_run(input_file: str, params: IECParameters, result: GenerationResult) -> None:
+    """Print the standard read/generate summary for a successful run."""
+
+    print(f"Read {len(params.conditions)} condition(s) from '{input_file}'.")
+    _report_result(result)
+    print(params.summary())
+    print(f"\nGenerated {result.count} wind file(s).")
+
+
+def _generate_command(
+    input_file: str,
+    output_dir: str,
+    *,
+    continue_on_error: bool,
+) -> int:
+    """Generate from an input file, fail-closed by default.
+
+    By default this is all-or-nothing: any unparseable input or invalid condition
+    aborts with a clean message and no files are written (atomic + strict). With
+    ``continue_on_error`` the valid conditions are generated, invalid ones are
+    reported, and the command still succeeds.
+    """
+
+    if continue_on_error:
+        params, result = generate_from_input_file(input_file, output_dir=output_dir, strict=False)
+        _report_run(input_file, params, result)
+        return 0
+
+    try:
+        params, result = generate_from_input_file(input_file, output_dir=output_dir, strict=True, atomic=True)
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        print(
+            "No files were written. Re-run with --continue-on-error to generate the "
+            "valid conditions and skip the rest.",
+            file=sys.stderr,
+        )
+        return 1
+    _report_run(input_file, params, result)
+    return 0
+
+
 def _prompt_text(prompt: str, default: str) -> str:
     value = input(f"{prompt} [{default}]: ").strip()
     return value or default
@@ -174,12 +216,19 @@ def _run_wizard(args: argparse.Namespace) -> int:
         input_path = output_dir / args.save_input
         input_path.write_text(_parameters_to_input_text(params), encoding="utf-8")
 
-    result = generate_all(params, output_dir=output_dir, strict=False)
+    try:
+        result = generate_all(params, output_dir=output_dir, strict=True, atomic=True)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        print("No wind files were written.", file=sys.stderr)
+        if input_path is not None:
+            print(f"Your inputs were saved to {input_path} so you can adjust and re-run.", file=sys.stderr)
+        return 1
     _report_result(result)
     print(f"\nGenerated {result.count} wind file(s) in {output_dir}")
     if input_path is not None:
         print(f"Saved reproducible input file to {input_path}")
-    return 0 if result.ok else 1
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -195,7 +244,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--continue-on-error",
         action="store_true",
-        help="Exit 0 even if some conditions fail to generate (default: exit nonzero).",
+        help=(
+            "Generate the valid conditions and skip invalid ones. "
+            "By default an invalid condition aborts the run and writes no files."
+        ),
     )
 
     template_parser = subparsers.add_parser("template", help="Write a commented template input file.")
@@ -213,20 +265,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command is None:
-        params, result = generate_from_input_file(DEFAULT_INPUT_FILENAME, output_dir=".", strict=False)
-        print(f"Read {len(params.conditions)} condition(s) from '{DEFAULT_INPUT_FILENAME}'.")
-        _report_result(result)
-        print(params.summary())
-        print(f"\nGenerated {result.count} wind file(s).")
-        return 0 if result.ok else 1
+        return _generate_command(DEFAULT_INPUT_FILENAME, ".", continue_on_error=False)
 
     if args.command == "run":
-        params, result = generate_from_input_file(args.input_file, output_dir=args.output_dir, strict=False)
-        print(f"Read {len(params.conditions)} condition(s) from '{args.input_file}'.")
-        _report_result(result)
-        print(params.summary())
-        print(f"\nGenerated {result.count} wind file(s).")
-        return 0 if (result.ok or args.continue_on_error) else 1
+        return _generate_command(args.input_file, args.output_dir, continue_on_error=args.continue_on_error)
 
     if args.command == "template":
         path = write_template(args.dest)

@@ -210,3 +210,78 @@ class ParsingTests(WorkspaceTestCaseMixin, unittest.TestCase):
 
         params = parse_input_file(path)
         self.assertEqual(list(params.conditions), ["EWM50", "NWP10.0"])
+
+    def _keyed_lines(self) -> list[str]:
+        return [
+            "si_unit = True",
+            "t1 = 40.0",
+            "wtc = 2",
+            "catg = B",
+            "slope_deg = 0.0",
+            "iec_edition = 3",
+            "hh = 80.0",
+            "dia = 80.0",
+            "vin = 4.0",
+            "vrated = 10.0",
+            "vout = 24.0",
+            "conditions:",
+            "  - EWM50",
+        ]
+
+    def test_keyed_duplicate_scalar_field_is_rejected(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "dup.ipt"
+        lines = self._keyed_lines()
+        lines.insert(3, "wtc = 3")  # a second wtc, conflicting with line 3
+        path.write_text("\n".join(lines), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, r"Duplicate field 'wtc' on line 4.*already set on line 3"):
+            parse_input_file(path)
+
+    def test_keyed_duplicate_via_alias_is_rejected(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "dup_alias.ipt"
+        lines = self._keyed_lines()
+        lines.insert(3, "turbine_class = 3")  # alias for wtc -> still a duplicate
+        path.write_text("\n".join(lines), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Duplicate field 'wtc'"):
+            parse_input_file(path)
+
+    def test_openfast_duplicate_scalar_field_is_rejected(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "dup_of.ipt"
+        lines = openfast_case_table_text().splitlines()
+        index = next(i for i, line in enumerate(lines) if line.split()[1:2] == ["wtc"])
+        lines.insert(index + 1, "3               wtc          - duplicate class")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Duplicate field 'wtc'"):
+            parse_input_file(path)
+
+    def test_format_directive_pins_keyed_layout(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "pinned.ipt"
+        path.write_text("\n".join(["! format: keyed-v1", *self._keyed_lines()]), encoding="utf-8")
+        params = parse_input_file(path)
+        self.assertEqual(list(params.conditions), ["EWM50"])
+
+    def test_format_directive_accepts_format_version_and_equals(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "pinned2.ipt"
+        path.write_text("\n".join(["# format_version = keyed", *self._keyed_lines()]), encoding="utf-8")
+        params = parse_input_file(path)
+        self.assertEqual(params.wtc, 2)
+
+    def test_unknown_format_directive_raises(self) -> None:
+        tmp = self.workspace_tempdir()
+        path = tmp / "bad_format.ipt"
+        path.write_text("\n".join(["! format: bogus-v9", *self._keyed_lines()]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Unknown format directive 'bogus-v9'"):
+            parse_input_file(path)
+
+    def test_leading_byte_order_mark_is_tolerated(self) -> None:
+        # Files saved by Windows editors often start with a UTF-8 BOM; it must not
+        # corrupt the first line (here, a format directive).
+        tmp = self.workspace_tempdir()
+        path = tmp / "bom.ipt"
+        path.write_text("\n".join(["! format: keyed-v1", *self._keyed_lines()]), encoding="utf-8-sig")
+        params = parse_input_file(path)
+        self.assertEqual(list(params.conditions), ["EWM50"])

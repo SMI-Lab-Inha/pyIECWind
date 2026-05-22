@@ -138,3 +138,55 @@ class GeneratorErrorTests(WorkspaceTestCaseMixin, unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Cannot parse"):
                     generator(code, self.params, output_dir=self.tmp)
                 self.assertFalse((self.tmp / f"{code}.wnd").exists(), code)
+
+
+class AtomicGenerationTests(WorkspaceTestCaseMixin, unittest.TestCase):
+    def test_atomic_strict_writes_nothing_when_a_later_condition_fails(self) -> None:
+        out = self.workspace_tempdir() / "out"
+        # EWM50 and NWP10.0 are valid; EWSV+99.0 is out of the operating range.
+        params = default_parameters(conditions=["EWM50", "NWP10.0", "EWSV+99.0"])
+
+        with self.assertRaisesRegex(ValueError, "must be between"):
+            generate_all(params, output_dir=out, strict=True, atomic=True)
+
+        # All-or-nothing: not even the valid leading files survive, and the
+        # staging directory is cleaned up.
+        self.assertEqual(sorted(out.glob("*.wnd")), [])
+        self.assertEqual([entry for entry in out.iterdir() if entry.is_dir()], [])
+
+    def test_atomic_strict_commits_all_files_on_success(self) -> None:
+        out = self.workspace_tempdir() / "out"
+        params = default_parameters(conditions=["EWM50", "NWP10.0", "EWSV+12.0"])
+
+        result = generate_all(params, output_dir=out, strict=True, atomic=True)
+
+        self.assertEqual(result.count, 3)
+        self.assertTrue(result.ok)
+        for name in ("EWM50.wnd", "NWP10.0.wnd", "EWSV+12.0.wnd"):
+            self.assertTrue((out / name).exists(), name)
+        # No staging directory left behind after a successful commit.
+        self.assertEqual([entry for entry in out.iterdir() if entry.is_dir()], [])
+
+    def test_non_atomic_strict_can_leave_partial_output(self) -> None:
+        # Contrast case documenting why atomic mode exists: without it, a valid
+        # leading condition is already on disk when a later one raises.
+        out = self.workspace_tempdir() / "out"
+        params = default_parameters(conditions=["EWM50", "EWSV+99.0"])
+
+        with self.assertRaises(ValueError):
+            generate_all(params, output_dir=out, strict=True, atomic=False)
+
+        self.assertTrue((out / "EWM50.wnd").exists())
+
+    def test_atomic_non_strict_commits_valid_files_and_records_errors(self) -> None:
+        out = self.workspace_tempdir() / "out"
+        params = default_parameters(conditions=["EWM50", "ABC123", "NWP10.0"])
+
+        result = generate_all(params, output_dir=out, strict=False, atomic=True)
+
+        self.assertEqual(result.count, 2)
+        self.assertFalse(result.ok)
+        self.assertEqual([error.code for error in result.errors], ["ABC123"])
+        self.assertTrue((out / "EWM50.wnd").exists())
+        self.assertTrue((out / "NWP10.0.wnd").exists())
+        self.assertEqual([entry for entry in out.iterdir() if entry.is_dir()], [])

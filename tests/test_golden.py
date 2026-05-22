@@ -1,13 +1,17 @@
 """Golden-file regression tests.
 
 The committed ``tests/golden`` corpus locks the trusted numeric output of every
-generator. Comment/header lines are compared exactly (after masking the version
-stamp, which legitimately changes between releases); data rows are compared
+generator. Comment/header lines are compared exactly; data rows are compared
 column-by-column within a tolerance matching the rendered three-decimal output.
+
+The single version-stamp line is stored in its masked form (``pyIECWind vX``) and
+masked again on both sides at compare time, so the corpus is version-independent:
+a release bump never invalidates it and it never needs regenerating just to chase
+a version number.
 
 To regenerate the corpus after an intentional change, run::
 
-    PYIECWIND_UPDATE_GOLDEN=1 python -m pytest tests/test_golden.py
+    PYIECWIND_UPDATE_GOLDEN=1 python tests/test_golden.py
 
 and review the diff before committing.
 """
@@ -40,13 +44,20 @@ def _generate(scenario: Scenario, code: str, output_dir) -> str:
 
 
 def regenerate_golden() -> int:
-    """Write the golden corpus to disk, returning the number of files written."""
+    """Write the golden corpus to disk, returning the number of files written.
+
+    The version stamp is stored masked (``pyIECWind vX``) so the committed corpus
+    is version-independent; see the module docstring.
+    """
 
     written = 0
     for scenario in SCENARIOS:
-        scenario.directory().mkdir(parents=True, exist_ok=True)
+        directory = scenario.directory()
+        directory.mkdir(parents=True, exist_ok=True)
         for code in scenario.conditions:
-            _generate(scenario, code, scenario.directory())
+            text = _generate(scenario, code, directory)
+            masked = "".join(f"{_mask(line)}\n" for line in text.splitlines())
+            (directory / f"{code}.wnd").write_text(masked, encoding="utf-8")
             written += 1
     return written
 

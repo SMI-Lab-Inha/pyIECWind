@@ -180,6 +180,61 @@ The axis (``V``/``H``) selects whether :math:`s(t)` is written to the vertical o
 horizontal linear-shear column, and the sign sets its direction. Implemented by
 :func:`~pyiecwind.gen_ews`.
 
+Traceability
+------------
+
+Each condition family maps to one implementing function, one independent oracle
+check that recomputes its headline quantity from the equations on this page (see
+:doc:`validation`), and one or more golden scenarios that lock its byte output.
+The standard reference is IEC 61400-1, Clause 6 (wind conditions), for both
+Edition 1 and Edition 3; the exact sub-clause and table numbering differs between
+editions and is not reproduced here (consult the standard directly).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 26 18 26 22
+
+   * - Family
+     - Governing equation (this page)
+     - Code
+     - Independent oracle test
+     - Golden scenarios
+   * - NWP
+     - Power-law profile; :math:`\alpha` per ``iec_edition``
+     - :func:`~pyiecwind.gen_nwp`
+     - ``test_oracle.test_nwp_steady_speed``
+     - si_baseline, english_baseline, edition1, slope8
+   * - EWM
+     - :math:`V_\mathrm{e50}=1.4V_\mathrm{ref}`, :math:`V_\mathrm{e1}=0.8V_\mathrm{e50}`; fixed :math:`\alpha=0.11`
+     - :func:`~pyiecwind.gen_ewm`
+     - ``test_oracle.test_ewm_extreme_wind_speeds``
+     - all six scenarios
+   * - EOG
+     - Gust amplitude :math:`V_\mathrm{gust}` over :math:`T=10.5` s
+     - :func:`~pyiecwind.gen_eog`
+     - ``test_oracle.test_eog_gust_amplitude``
+     - si_baseline, english_baseline, edition1, class1_cat_a, class3_cat_c, slope8
+   * - EDC
+     - Direction amplitude :math:`\theta_e` over :math:`T=6` s
+     - :func:`~pyiecwind.gen_edc`
+     - ``test_oracle.test_edc_direction``
+     - si_baseline, english_baseline, edition1, class1_cat_a, class3_cat_c, slope8
+   * - ECD
+     - :math:`V_\mathrm{cg}=15` m/s and :math:`\theta_\mathrm{cg}` over :math:`T=10` s
+     - :func:`~pyiecwind.gen_ecd`
+     - ``test_oracle.test_ecd_direction_and_gust``
+     - si_baseline, english_baseline, edition1, class1_cat_a, class3_cat_c, slope8
+   * - EWS
+     - Peak shear :math:`s_\mathrm{max}` over :math:`T=12` s
+     - :func:`~pyiecwind.gen_ews`
+     - ``test_oracle.test_ews_shear``
+     - si_baseline, english_baseline, edition1, class1_cat_a, class3_cat_c, slope8
+
+Only the power-law shear exponent :math:`\alpha` depends on ``iec_edition``
+(0.2 for Edition 1, 0.14 for Edition 3, and a fixed 0.11 for EWM); the transient
+gust, shear, and direction-change magnitudes above are edition-independent in
+this implementation.
+
 Provenance and scope
 --------------------
 
