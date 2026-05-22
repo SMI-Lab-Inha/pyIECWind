@@ -9,7 +9,7 @@ Supported
 
 * **Standard:** IEC 61400-1 Editions 1 and 3, via the ``iec_edition`` field,
   which selects the normal power-law shear exponent (0.2 or 0.14).
-* **Condition families:** the six classical IECWind-style cases — ECD, EWS, EOG,
+* **Condition families:** the six classical IECWind-style cases - ECD, EWS, EOG,
   EDC, NWP, and EWM (see :doc:`theory`).
 * **Turbine classes:** I, II, III.
 * **Turbulence categories:** A, B, C.

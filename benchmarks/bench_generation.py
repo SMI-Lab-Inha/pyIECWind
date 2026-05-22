@@ -6,11 +6,20 @@ free -- just the standard library and pyiecwind.
 
 Usage::
 
-    python benchmarks/bench_generation.py [repeats]
+    python benchmarks/bench_generation.py [repeats]      # human-readable
+    python benchmarks/bench_generation.py [repeats] --json  # machine-readable
+
+The ``--json`` output is suitable for recording a baseline and comparing against
+later runs. See the threshold policy in ``docs/contributing.rst`` -- CI runs this
+as a smoke test (must complete without error); wall-clock comparison is done
+offline against a recorded baseline rather than gated in CI, because shared
+runners are too noisy for a stable threshold.
 """
 
 from __future__ import annotations
 
+import argparse
+import json
 import sys
 import tempfile
 import time
@@ -35,22 +44,42 @@ def run_once() -> int:
     return total
 
 
-def main(argv: list[str]) -> int:
-    repeats = int(argv[1]) if len(argv) > 1 else 5
+def measure(repeats: int) -> dict[str, float | int]:
+    """Run the workload ``repeats`` times (after a warm-up) and summarise timings."""
 
     files = run_once()  # warm up imports and the filesystem
-    samples = []
-    for _ in range(repeats):
-        start = time.perf_counter()
-        run_once()
-        samples.append(time.perf_counter() - start)
-
+    samples = [(_timed_run()) for _ in range(repeats)]
     best = min(samples)
-    mean = sum(samples) / len(samples)
-    print(f"scenarios={len(SCENARIOS)}  files/run={files}  repeats={repeats}")
-    print(f"best={best * 1e3:.1f} ms   mean={mean * 1e3:.1f} ms   per-file={best / files * 1e6:.0f} us")
+    return {
+        "scenarios": len(SCENARIOS),
+        "files_per_run": files,
+        "repeats": repeats,
+        "best_ms": round(best * 1e3, 3),
+        "mean_ms": round(sum(samples) / len(samples) * 1e3, 3),
+        "per_file_us": round(best / files * 1e6, 1),
+    }
+
+
+def _timed_run() -> float:
+    start = time.perf_counter()
+    run_once()
+    return time.perf_counter() - start
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Benchmark wind-file generation.")
+    parser.add_argument("repeats", nargs="?", type=int, default=5)
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    args = parser.parse_args(argv)
+
+    result = measure(args.repeats)
+    if args.json:
+        print(json.dumps(result))
+    else:
+        print(f"scenarios={result['scenarios']}  files/run={result['files_per_run']}  repeats={result['repeats']}")
+        print(f"best={result['best_ms']} ms   mean={result['mean_ms']} ms   per-file={result['per_file_us']} us")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    raise SystemExit(main())

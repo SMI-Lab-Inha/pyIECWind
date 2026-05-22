@@ -220,6 +220,12 @@ def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = No
     --------
     gen_edc : Extreme Direction Change.
     gen_eog : Extreme Operating Gust.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 Extreme Coherent Gust with Direction Change: a
+    coherent gust of 15 m/s with a direction change of 180 deg for Vhub <= 4 m/s
+    (else 720/Vhub deg), each ramped over 10 s. See :doc:`theory` for the equations.
     """
     match = re.match(r"^ECD([+-])R([+-]?\d*\.?\d*)$", code)
     if not match:
@@ -288,6 +294,11 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
     ------
     ValueError
         If ``code`` is malformed, or the wind speed is outside ``[vin, vout]``.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 Extreme Wind Shear: a transient linear shear
+    (vertical or horizontal) ramped over 12 s. See :doc:`theory` for the equations.
     """
     match = re.match(r"^EWS([VH])([+-])(\d+\.?\d*)$", code)
     if not match:
@@ -352,6 +363,11 @@ def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = No
     ValueError
         If ``code`` is malformed (including a modifier on an ``I``/``O``
         reference), or the modifier exceeds +/-2 m/s.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 Extreme Operating Gust over a 10.5 s transient.
+    See :doc:`theory` for the equations.
     """
     # A speed modifier is only meaningful for the rated-speed (R) reference; the
     # grammar therefore rejects modifiers on the cut-in (I) and cut-out (O) cases
@@ -427,6 +443,11 @@ def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = No
     ValueError
         If ``code`` is malformed (including a modifier on an ``I``/``O``
         reference), or the modifier exceeds +/-2 m/s.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 Extreme Direction Change ramped over 6 s.
+    See :doc:`theory` for the equations.
     """
     # As with EOG, a speed modifier is only valid for the rated-speed (R)
     # reference; modifiers on I/O are rejected instead of being ignored.
@@ -498,6 +519,10 @@ def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = No
     ------
     ValueError
         If ``code`` is malformed.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 Normal Wind Profile (power law). See :doc:`theory`.
     """
     match = re.match(r"^NWP(\d+\.?\d*)$", code)
     if not match:
@@ -538,6 +563,11 @@ def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = No
     ------
     ValueError
         If ``code`` is not ``EWM50`` or ``EWM01``.
+
+    Notes
+    -----
+    Implements the IEC 61400-1 steady Extreme Wind Model (Ve50 = 1.4*Vref,
+    Ve1 = 0.8*Ve50). See :doc:`theory` for the equations.
     """
     match = re.match(r"^EWM(50|01)$", code)
     if not match:

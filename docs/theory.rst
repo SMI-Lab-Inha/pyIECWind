@@ -179,8 +179,25 @@ The axis (``V``/``H``) selects whether :math:`s(t)` is written to the vertical o
 horizontal linear-shear column, and the sign sets its direction. Implemented by
 :func:`~pyiecwind.gen_ews`.
 
+Provenance and scope
+--------------------
+
+The equations above are implemented from the wind-condition definitions of
+IEC 61400-1, Clause 6 (external conditions / wind conditions), as historically
+realised by NREL *IECWind*. They are **re-derived independently** in this package
+rather than ported from the NREL source, and are cross-checked by the analytical
+oracle described in :doc:`validation`. No copyrighted IEC standard text is
+reproduced here; consult the standard itself for the normative definitions and
+the precise clause numbering, which differs between editions. ``iec_edition``
+selects only the normal power-law shear exponent (0.2 for Edition 1, 0.14 for
+Edition 3); it is not a claim of full edition compliance (see :doc:`limitations`).
+
 References
 ----------
 
-* IEC 61400-1, *Wind turbines -- Part 1: Design requirements* (Editions 1 and 3).
-* B. J. Jonkman and M. L. Buhl, *IECWind*, National Renewable Energy Laboratory.
+* IEC 61400-1, *Wind turbines -- Part 1: Design requirements*, Clause 6 (Wind
+  conditions), Editions 1 and 3. International Electrotechnical Commission.
+* B. J. Jonkman and M. L. Buhl Jr., *IECWind*, National Renewable Energy
+  Laboratory. https://www.nrel.gov/wind/nwtc/iecwind.html
+* OpenFAST *InflowWind* module documentation, National Renewable Energy
+  Laboratory. https://openfast.readthedocs.io/

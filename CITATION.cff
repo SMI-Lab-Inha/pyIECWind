@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "pyIECWind: IEC 61400-1 wind-condition file generation for OpenFAST InflowWind"
+abstract: >-
+  pyIECWind generates IEC 61400-1 wind-condition (.wnd) files for the OpenFAST
+  InflowWind module, implementing the wind-condition models historically provided
+  by NREL IECWind behind a typed, validated, and regression-locked Python API and
+  command-line interface.
+type: software
+authors:
+  - family-names: Seo
+    given-names: Jae Hoon
+    affiliation: "SMI Lab, Inha University"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"  # add when available
+version: "0.1.0"
+date-released: "2026-05-22"
+license: MIT
+repository-code: "https://github.com/SMI-Lab-Inha/pyIECWind"
+url: "https://github.com/SMI-Lab-Inha/pyIECWind"
+keywords:
+  - wind energy
+  - wind turbine
+  - IEC 61400-1
+  - IECWind
+  - OpenFAST
+  - InflowWind
+# identifiers:
+#   - type: doi
+#     value: "10.5281/zenodo.XXXXXXX"  # add a Zenodo DOI after archiving a release

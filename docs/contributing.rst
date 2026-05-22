@@ -45,13 +45,20 @@ Benchmark
 ---------
 
 A lightweight, dependency-free benchmark times generation over the full scenario
-matrix. It runs as a smoke step in CI (no wall-clock threshold is enforced — CI
-runners are too noisy for a meaningful bound); use it locally to spot
-regressions:
+matrix:
 
 .. code-block:: console
 
-   $ python benchmarks/bench_generation.py
+   $ python benchmarks/bench_generation.py            # human-readable
+   $ python benchmarks/bench_generation.py 20 --json  # machine-readable baseline
+
+**Threshold policy.** CI runs the benchmark as a *smoke* step: it must complete
+without error (catching changes that break generation), but no wall-clock
+threshold is gated, because shared CI runners are too noisy for a stable bound
+that would not flap. Performance regressions are tracked *offline* instead: record
+a JSON baseline on a fixed machine (``--json``) and compare a later run's
+``per_file_us`` / ``best_ms`` against it, investigating regressions beyond roughly
+20%. Promote this to an automated gate only on a dedicated, low-noise runner.
 
 Conventions
 -----------
