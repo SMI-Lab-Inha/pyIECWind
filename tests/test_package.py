@@ -13,14 +13,15 @@ class PackageSmokeTests(WorkspaceTestCaseMixin, unittest.TestCase):
         root = Path.cwd()
         expected = [
             root / "README.md",
-            root / "QUICKSTART.md",
-            root / "conda-recipe.md",
+            root / "CHANGELOG.md",
+            root / "LICENSE",
             root / "recipe" / "meta.yaml",
-            root / "docs" / "USER_GUIDE.md",
-            root / "docs" / "STUDY_EXAMPLE.md",
-            root / "docs" / "INPUT_FORMAT.md",
-            root / "docs" / "CASE_REFERENCE.md",
-            root / "docs" / "MIGRATION.md",
+            root / "docs" / "conf.py",
+            root / "docs" / "index.rst",
+            root / "docs" / "theory.rst",
+            root / "docs" / "api.rst",
+            root / "docs" / "data_sources.rst",
+            root / "docs" / "validation.rst",
         ]
         for path in expected:
             self.assertTrue(path.exists(), str(path))

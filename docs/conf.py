@@ -21,23 +21,21 @@ except PackageNotFoundError:  # pragma: no cover - building from an uninstalled 
 version = release
 
 extensions = [
-    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
 ]
 
-source_suffix = {
-    ".rst": "restructuredtext",
-    ".md": "markdown",
-}
-
-myst_enable_extensions = ["colon_fence", "deflist", "dollarmath"]
+source_suffix = {".rst": "restructuredtext"}
+root_doc = "index"
 
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
 autoclass_content = "both"
+napoleon_numpy_docstring = True
+napoleon_google_docstring = False
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
