@@ -417,10 +417,38 @@ def _parse_openfast_input_file(raw_lines: list[str], *, legacy: bool = False) ->
 def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: bool = False) -> IECParameters:
     """Read an input file and return validated :class:`IECParameters`.
 
-    The OpenFAST-style table, keyed, and legacy positional layouts are auto-detected.
-    With ``legacy=True``, unsupported IEC editions are coerced to edition 3 (with a
-    warning) instead of raising. Raises ``FileNotFoundError`` if the file is missing
-    and ``ValueError`` for malformed or out-of-range input.
+    The OpenFAST-style table, keyed (``key = value``), and legacy positional
+    layouts are auto-detected.
+
+    Parameters
+    ----------
+    filepath : str or pathlib.Path, optional
+        Path to the input file. Defaults to ``pyiecwind.ipt`` in the current
+        working directory.
+    legacy : bool, default False
+        If ``True``, unsupported IEC editions are coerced to edition 3 (emitting
+        an :class:`~pyiecwind.IECWindWarning`) instead of raising. Provided for
+        backward compatibility with older inputs.
+
+    Returns
+    -------
+    IECParameters
+        The validated, immutable parameter object.
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``filepath`` does not exist.
+    ValueError
+        For malformed input, an unknown key, an unrecognised ``si_unit`` token,
+        an out-of-range value, or (unless ``legacy=True``) an unsupported edition.
+
+    Examples
+    --------
+    >>> from pyiecwind import parse_input_file
+    >>> params = parse_input_file("examples/sample_case.ipt")  # doctest: +SKIP
+    >>> params.wtc  # doctest: +SKIP
+    2
     """
     path = Path(filepath)
     if not path.exists():

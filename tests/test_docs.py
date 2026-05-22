@@ -38,23 +38,23 @@ _MOJIBAKE_MARKERS = (
 )
 
 
-def _markdown_files() -> list[Path]:
-    files = list((_ROOT / "docs").rglob("*.md"))
-    files += [_ROOT / "README.md", _ROOT / "QUICKSTART.md", _ROOT / "CHANGELOG.md"]
+def _doc_files() -> list[Path]:
+    files = list((_ROOT / "docs").rglob("*.rst"))
+    files += [_ROOT / "README.md", _ROOT / "CHANGELOG.md"]
     return [f for f in files if f.exists() and "_build" not in f.parts]
 
 
 class DocsEncodingTests(unittest.TestCase):
-    def test_markdown_files_found(self) -> None:
-        self.assertTrue(_markdown_files(), "no markdown files discovered")
+    def test_doc_files_found(self) -> None:
+        self.assertTrue(_doc_files(), "no documentation files discovered")
 
-    def test_markdown_is_valid_utf8(self) -> None:
-        for path in _markdown_files():
+    def test_docs_are_valid_utf8(self) -> None:
+        for path in _doc_files():
             with self.subTest(file=path.name):
                 path.read_bytes().decode("utf-8")  # raises on invalid UTF-8
 
-    def test_markdown_has_no_mojibake(self) -> None:
-        for path in _markdown_files():
+    def test_docs_have_no_mojibake(self) -> None:
+        for path in _doc_files():
             text = path.read_text(encoding="utf-8")
             for index, marker in enumerate(_MOJIBAKE_MARKERS):
                 with self.subTest(file=path.name, marker=index):

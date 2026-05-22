@@ -43,20 +43,26 @@ First public release of `pyIECWind`.
 - Golden-reference `.wnd` corpus under `tests/golden/`, plus golden, property/invariant,
   and independent-oracle test suites locking numeric output
 - Developer tooling configuration (ruff, mypy, pytest-cov with a 90% coverage gate)
-- Sphinx documentation (API reference, architecture, and verification matrix)
+- reStructuredText documentation built with Sphinx (theory with equations, units,
+  input files, API reference, API contract, validation, limitations, deployment)
 - Cross-platform CI matrix (Linux/macOS/Windows × Python 3.10–3.13) with lint,
-  type-check, coverage gate, wheel build/smoke, and docs build
+  type-check, coverage gate, wheel build/smoke, docs build, and a benchmark smoke step
 - `MANIFEST.in` so the sdist ships a complete, runnable test suite and the docs source
 - Documentation encoding guard (rejects mojibake / invalid UTF-8 in markdown)
 - `legacy=` option on `parse_input_file` to opt into legacy edition coercion
 - Hypothesis property-based tests (parser round-trip, grammar, units, invariants)
 - A dependency-free benchmark (`benchmarks/bench_generation.py`) over the scenario matrix
-- Public-API docstrings and an `__all__` on every module; documented thread-safety
+- Full NumPy-style public-API docstrings (Parameters/Returns/Raises/Examples) and
+  an `__all__` on every module; documented thread-safety
 
 ### Changed
 
 - Type checking now runs in `mypy --strict`; pytest treats warnings as errors
 - License metadata modernized to the SPDX form (`license = "MIT"`, PEP 639)
+- Documentation converted from Markdown to reStructuredText; superseded user-guide
+  and conda notes removed in favour of the Sphinx pages
+- Conda recipe requires `setuptools >=77` (matching the build backend), with the
+  source `sha256` set from the tagged release archive
 
 - Library code no longer prints; all user-facing output is owned by the CLI
 - Generators return the written `Path`; `write_template` returns its path

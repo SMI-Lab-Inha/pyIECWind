@@ -35,6 +35,12 @@ jobs:
       - name: Mypy type check
         run: mypy
 
+      - name: Benchmark smoke
+        # Runs the generation benchmark over the full scenario matrix to catch
+        # crashes/regressions that break it. No wall-clock threshold is enforced
+        # (shared CI runners are too noisy for a meaningful bound).
+        run: python benchmarks/bench_generation.py 3
+
   test:
     name: Tests (${{ matrix.os }} / py${{ matrix.python-version }})
     needs: lint

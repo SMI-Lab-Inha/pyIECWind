@@ -108,6 +108,39 @@ class IECParameters:
     physically ordered cut-in < rated < cut-out speed range. A frozen dataclass
     with a tuple of ``conditions`` makes an invalid object impossible to create
     and impossible to mutate into one afterwards.
+
+    Length and speed fields are stored in SI (m, m/s); ``si_unit`` only controls
+    how values are rendered in output files and how condition-code speeds are
+    interpreted.
+
+    Parameters
+    ----------
+    si_unit : bool
+        Render output in SI (m, m/s) when ``True``, English (ft, ft/s) when ``False``.
+    t1 : float
+        Transient start time [s].
+    wtc : int
+        IEC turbine class: 1, 2, or 3.
+    catg : str
+        Turbulence category: ``"A"``, ``"B"``, or ``"C"`` (normalised to upper case).
+    slope_deg : float
+        Inflow inclination angle [deg].
+    iec_edition : int
+        IEC 61400-1 edition for the power-law shear exponent: 1 or 3.
+    hh : float
+        Hub height [m].
+    dia : float
+        Rotor diameter [m]; must be positive and less than twice the hub height.
+    vin, vrated, vout : float
+        Cut-in, rated, and cut-out wind speeds [m/s]; must satisfy
+        ``0 < vin < vrated < vout``.
+    conditions : tuple of str, optional
+        Condition codes to generate (e.g. ``("ECD+R", "EWM50")``). Stored as a tuple.
+
+    Raises
+    ------
+    ValueError
+        If any field is non-finite or out of its allowed range.
     """
 
     si_unit: bool

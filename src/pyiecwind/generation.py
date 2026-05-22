@@ -193,7 +193,33 @@ def _resolve_output_path(code: str, output_dir: str | Path | None = None) -> Pat
 def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate an Extreme Coherent Gust with Direction Change (ECD) ``.wnd`` file.
 
-    ``code`` has the form ``ECD[+/-]R[+/-modifier]``. Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code of the form ``ECD[+/-]R[+/-modifier]`` (e.g. ``"ECD+R"``,
+        ``"ECD-R+1.5"``). The sign sets the direction-change sense; the optional
+        modifier (magnitude <= 2 m/s in user units) offsets the rated hub speed.
+    params : IECParameters
+        Turbine definition supplying rated speed, slope, and shear exponent.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is malformed, the modifier exceeds +/-2 m/s, or the resulting
+        hub speed exceeds the reference wind speed.
+
+    See Also
+    --------
+    gen_edc : Extreme Direction Change.
+    gen_eog : Extreme Operating Gust.
     """
     match = re.match(r"^ECD([+-])R([+-]?\d*\.?\d*)$", code)
     if not match:
@@ -241,8 +267,27 @@ def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = No
 def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate an Extreme Wind Shear (EWS) ``.wnd`` file.
 
-    ``code`` has the form ``EWS[V/H][+/-]<speed>`` (vertical or horizontal shear).
-    Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code ``EWS[V/H][+/-]<speed>`` (e.g. ``"EWSV+12.0"``). ``V``/``H``
+        selects vertical or horizontal shear, the sign selects the shear
+        direction, and ``<speed>`` is the hub-height wind speed in user units.
+    params : IECParameters
+        Turbine definition supplying the operating range, turbulence, and geometry.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is malformed, or the wind speed is outside ``[vin, vout]``.
     """
     match = re.match(r"^EWS([VH])([+-])(\d+\.?\d*)$", code)
     if not match:
@@ -285,8 +330,28 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
 def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate an Extreme Operating Gust (EOG) ``.wnd`` file.
 
-    ``code`` is ``EOGI``, ``EOGO``, ``EOGR``, or ``EOGR[+/-modifier]``.
-    Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code ``EOGI``, ``EOGO``, ``EOGR``, or ``EOGR[+/-modifier]``.
+        ``I``/``O``/``R`` select the cut-in, cut-out, or rated reference speed; a
+        modifier (magnitude <= 2 m/s in user units) is valid only with ``R``.
+    params : IECParameters
+        Turbine definition supplying operating speeds, turbulence, and geometry.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is malformed (including a modifier on an ``I``/``O``
+        reference), or the modifier exceeds +/-2 m/s.
     """
     # A speed modifier is only meaningful for the rated-speed (R) reference; the
     # grammar therefore rejects modifiers on the cut-in (I) and cut-out (O) cases
@@ -339,8 +404,29 @@ def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = No
 def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate an Extreme Direction Change (EDC) ``.wnd`` file.
 
-    ``code`` is ``EDC[+/-]I``, ``EDC[+/-]O``, ``EDC[+/-]R``, or
-    ``EDC[+/-]R[+/-modifier]``. Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code ``EDC[+/-]I``, ``EDC[+/-]O``, ``EDC[+/-]R``, or
+        ``EDC[+/-]R[+/-modifier]``. The leading sign sets the yaw-excursion sense;
+        ``I``/``O``/``R`` select the reference speed; a modifier is valid only
+        with ``R``.
+    params : IECParameters
+        Turbine definition supplying operating speeds, turbulence, and geometry.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is malformed (including a modifier on an ``I``/``O``
+        reference), or the modifier exceeds +/-2 m/s.
     """
     # As with EOG, a speed modifier is only valid for the rated-speed (R)
     # reference; modifiers on I/O are rejected instead of being ignored.
@@ -391,7 +477,27 @@ def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = No
 def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate a Normal Wind Profile (NWP) ``.wnd`` file.
 
-    ``code`` has the form ``NWP<speed>`` with the speed in m/s. Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code ``NWP<speed>`` (e.g. ``"NWP10.0"``). The embedded speed is
+        always interpreted in m/s, matching the historical IECWind convention,
+        regardless of the ``si_unit`` setting.
+    params : IECParameters
+        Turbine definition supplying slope and the shear exponent.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is malformed.
     """
     match = re.match(r"^NWP(\d+\.?\d*)$", code)
     if not match:
@@ -413,7 +519,25 @@ def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = No
 def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
     """Generate a steady Extreme Wind Model (EWM) ``.wnd`` file.
 
-    ``code`` is ``EWM50`` (50-year) or ``EWM01`` (1-year). Returns the path written.
+    Parameters
+    ----------
+    code : str
+        Condition code ``EWM50`` (50-year recurrence) or ``EWM01`` (1-year).
+    params : IECParameters
+        Turbine definition supplying the reference wind speed and slope.
+    output_dir : str or pathlib.Path or None, optional
+        Output directory; created if missing. ``None`` writes to the current
+        working directory.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the written ``.wnd`` file.
+
+    Raises
+    ------
+    ValueError
+        If ``code`` is not ``EWM50`` or ``EWM01``.
     """
     match = re.match(r"^EWM(50|01)$", code)
     if not match:
@@ -453,13 +577,45 @@ def generate_all(
     *,
     strict: bool = True,
 ) -> GenerationResult:
-    """Generate every condition in ``params``.
+    """Generate every condition listed in ``params``.
 
-    Fails closed: by default (``strict=True``) the first invalid condition raises
-    :class:`ValueError`, so a scientific caller never silently gets partial
-    output. Pass ``strict=False`` to instead collect failures into the returned
-    :class:`GenerationResult` (used by the CLI, which reports them and chooses an
-    exit code).
+    Fails closed by default: the first invalid condition raises, so a caller
+    never silently receives partial output.
+
+    Parameters
+    ----------
+    params : IECParameters
+        Validated turbine definition and the list of condition codes to generate.
+    output_dir : str or pathlib.Path or None, optional
+        Directory to write the ``<code>.wnd`` files into; created if it does not
+        exist. When ``None`` (the default) files are written to the current
+        working directory.
+    strict : bool, default True
+        If ``True``, raise :class:`ValueError` on the first condition that cannot
+        be generated. If ``False``, collect failures into the result and continue.
+
+    Returns
+    -------
+    GenerationResult
+        The paths written and any per-condition errors (errors are only
+        populated when ``strict=False``).
+
+    Raises
+    ------
+    ValueError
+        If ``strict`` is ``True`` and a condition code is unknown or invalid.
+
+    Examples
+    --------
+    >>> from pyiecwind import IECParameters, generate_all
+    >>> params = IECParameters(
+    ...     si_unit=True, t1=40.0, wtc=2, catg="B", slope_deg=0.0, iec_edition=3,
+    ...     hh=80.0, dia=80.0, vin=4.0, vrated=10.0, vout=24.0,
+    ...     conditions=("EWM50", "NWP10.0"),
+    ... )
+    >>> result = generate_all(params, output_dir="out")  # doctest: +SKIP
+    >>> result.count  # doctest: +SKIP
+    2
     """
 
     generated: list[Path] = []
@@ -489,8 +645,29 @@ def generate_from_input_file(
 ) -> tuple[IECParameters, GenerationResult]:
     """Parse ``input_file`` and generate all of its conditions.
 
-    Returns the parsed :class:`IECParameters` and the :class:`GenerationResult`.
-    Like :func:`generate_all`, this fails closed (``strict=True``) by default.
+    A convenience wrapper combining :func:`parse_input_file` and
+    :func:`generate_all`.
+
+    Parameters
+    ----------
+    input_file : str or pathlib.Path
+        Path to an input file in any supported layout.
+    output_dir : str or pathlib.Path or None, optional
+        Directory for the generated ``.wnd`` files (see :func:`generate_all`).
+    strict : bool, default True
+        Passed through to :func:`generate_all`; fails closed by default.
+
+    Returns
+    -------
+    tuple of (IECParameters, GenerationResult)
+        The parsed parameters and the generation outcome.
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``input_file`` does not exist.
+    ValueError
+        For malformed input, or (when ``strict=True``) an invalid condition.
     """
     params = parse_input_file(input_file)
     return params, generate_all(params, output_dir=output_dir, strict=strict)
