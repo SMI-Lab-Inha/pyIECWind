@@ -9,7 +9,6 @@ callers. Import internals from their own modules if you must.
 from __future__ import annotations
 
 from .generation import (
-    EWM_ALPHA,
     GenerationError,
     GenerationResult,
     gen_ecd,
@@ -29,6 +28,7 @@ from .models import (
     DEFAULT_INPUT_FILENAME,
     DEFAULT_TEMPLATE_FILENAME,
     DT,
+    EWM_ALPHA,
     PI,
     VCG,
     VERSION,

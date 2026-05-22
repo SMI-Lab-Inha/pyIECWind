@@ -1,7 +1,7 @@
 # Ship a coherent, runnable test suite and the docs source in the sdist.
 recursive-include tests *.py
 recursive-include tests/golden *.wnd
-recursive-include docs *.md *.rst *.py Makefile make.bat
+recursive-include docs *.md *.py Makefile make.bat
 include CHANGELOG.md
 include MANIFEST.in
 include .gitattributes
@@ -9,5 +9,3 @@ include .gitattributes
 # Never ship build/scratch artifacts.
 prune tests/.tmp
 prune docs/_build
-global-exclude *.py[cod]
-global-exclude __pycache__

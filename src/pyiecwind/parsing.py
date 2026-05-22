@@ -18,6 +18,10 @@ from .models import (
     IECWindWarning,
 )
 
+# `parse_input_file` is the only public name here; everything else is internal
+# (see docs/architecture.md for the module-surface convention).
+__all__ = ["parse_input_file"]
+
 FIELD_ALIASES = {
     "si_unit": "si_unit",
     "si_units": "si_unit",
@@ -411,6 +415,13 @@ def _parse_openfast_input_file(raw_lines: list[str], *, legacy: bool = False) ->
 
 
 def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: bool = False) -> IECParameters:
+    """Read an input file and return validated :class:`IECParameters`.
+
+    The OpenFAST-style table, keyed, and legacy positional layouts are auto-detected.
+    With ``legacy=True``, unsupported IEC editions are coerced to edition 3 (with a
+    warning) instead of raising. Raises ``FileNotFoundError`` if the file is missing
+    and ``ValueError`` for malformed or out-of-range input.
+    """
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(

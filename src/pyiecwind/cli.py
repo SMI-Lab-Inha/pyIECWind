@@ -16,6 +16,8 @@ from .core import (
     write_template,
 )
 
+__all__ = ["main", "build_parser"]
+
 
 def _report_result(result: GenerationResult) -> None:
     """Print per-file progress and any skipped conditions."""

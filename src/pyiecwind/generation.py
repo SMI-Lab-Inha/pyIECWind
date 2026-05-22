@@ -12,6 +12,19 @@ import numpy as np
 from .models import BETA, DT, EWM_ALPHA, PI, VCG, VERSION, IECParameters
 from .parsing import parse_input_file
 
+__all__ = [
+    "GenerationError",
+    "GenerationResult",
+    "gen_ecd",
+    "gen_edc",
+    "gen_eog",
+    "gen_ews",
+    "gen_nwp",
+    "gen_ewm",
+    "generate_all",
+    "generate_from_input_file",
+]
+
 
 @dataclass(frozen=True)
 class GenerationError:
@@ -178,6 +191,10 @@ def _resolve_output_path(code: str, output_dir: str | Path | None = None) -> Pat
 
 
 def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Coherent Gust with Direction Change (ECD) ``.wnd`` file.
+
+    ``code`` has the form ``ECD[+/-]R[+/-modifier]``. Returns the path written.
+    """
     match = re.match(r"^ECD([+-])R([+-]?\d*\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse ECD condition '{code}'. Expected format: ECD[+/-]R[+/-speed_modifier]")
@@ -222,6 +239,11 @@ def gen_ecd(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Wind Shear (EWS) ``.wnd`` file.
+
+    ``code`` has the form ``EWS[V/H][+/-]<speed>`` (vertical or horizontal shear).
+    Returns the path written.
+    """
     match = re.match(r"^EWS([VH])([+-])(\d+\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse EWS condition '{code}'. Expected format: EWS[V/H][+/-][wind_speed]")
@@ -261,6 +283,11 @@ def gen_ews(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Operating Gust (EOG) ``.wnd`` file.
+
+    ``code`` is ``EOGI``, ``EOGO``, ``EOGR``, or ``EOGR[+/-modifier]``.
+    Returns the path written.
+    """
     # A speed modifier is only meaningful for the rated-speed (R) reference; the
     # grammar therefore rejects modifiers on the cut-in (I) and cut-out (O) cases
     # rather than silently ignoring them.
@@ -310,6 +337,11 @@ def gen_eog(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate an Extreme Direction Change (EDC) ``.wnd`` file.
+
+    ``code`` is ``EDC[+/-]I``, ``EDC[+/-]O``, ``EDC[+/-]R``, or
+    ``EDC[+/-]R[+/-modifier]``. Returns the path written.
+    """
     # As with EOG, a speed modifier is only valid for the rated-speed (R)
     # reference; modifiers on I/O are rejected instead of being ignored.
     match = re.match(r"^EDC([+-])(?:([IO])|R([+-]?\d*\.?\d*))$", code)
@@ -357,6 +389,10 @@ def gen_edc(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate a Normal Wind Profile (NWP) ``.wnd`` file.
+
+    ``code`` has the form ``NWP<speed>`` with the speed in m/s. Returns the path written.
+    """
     match = re.match(r"^NWP(\d+\.?\d*)$", code)
     if not match:
         raise ValueError(f"Cannot parse NWP condition '{code}'. Expected format: NWP[wind_speed_in_m/s]")
@@ -375,6 +411,10 @@ def gen_nwp(code: str, params: IECParameters, output_dir: str | Path | None = No
 
 
 def gen_ewm(code: str, params: IECParameters, output_dir: str | Path | None = None) -> Path:
+    """Generate a steady Extreme Wind Model (EWM) ``.wnd`` file.
+
+    ``code`` is ``EWM50`` (50-year) or ``EWM01`` (1-year). Returns the path written.
+    """
     match = re.match(r"^EWM(50|01)$", code)
     if not match:
         raise ValueError(f"Cannot parse EWM condition '{code}'. Expected format: EWM50 or EWM01")
@@ -447,5 +487,10 @@ def generate_from_input_file(
     output_dir: str | Path | None = None,
     strict: bool = True,
 ) -> tuple[IECParameters, GenerationResult]:
+    """Parse ``input_file`` and generate all of its conditions.
+
+    Returns the parsed :class:`IECParameters` and the :class:`GenerationResult`.
+    Like :func:`generate_all`, this fails closed (``strict=True``) by default.
+    """
     params = parse_input_file(input_file)
     return params, generate_all(params, output_dir=output_dir, strict=strict)

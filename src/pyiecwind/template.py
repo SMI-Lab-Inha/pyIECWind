@@ -7,6 +7,8 @@ from pathlib import Path
 from .models import CASE_ROW_COMMENTS, CASE_TYPE_ORDER, DEFAULT_TEMPLATE_FILENAME, IECParameters
 from .parsing import _group_conditions_by_type
 
+__all__ = ["format_openfast_input", "default_template_text", "write_template"]
+
 
 def format_openfast_input(params: IECParameters) -> str:
     """Render parameters in a readable OpenFAST-style layout."""
@@ -86,6 +88,8 @@ def format_openfast_input(params: IECParameters) -> str:
 
 
 def default_template_text() -> str:
+    """Return the text of a commented example input file with sensible defaults."""
+
     return format_openfast_input(
         IECParameters(
             si_unit=True,
