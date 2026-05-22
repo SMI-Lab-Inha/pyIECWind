@@ -57,14 +57,20 @@ Tag and source archive
 
 #. Create the GitHub release for the tag (``gh release create v0.1.0 --generate-notes``
    or curated notes). Pushing the ``v*`` tag triggers ``.github/workflows/release.yml``,
-   which builds, attaches a build-provenance attestation, and publishes to PyPI via
-   trusted publishing (configure the PyPI Trusted Publisher once beforehand).
+   which builds the distributions and attaches a build-provenance attestation.
 #. Proceed with the conda-forge submission in :doc:`deployment`.
+
+.. note::
+
+   PyPI publishing is **not yet enabled** (the package is not on PyPI). When ready,
+   configure a PyPI Trusted Publisher for this repository and re-enable the publish
+   step in ``.github/workflows/release.yml``.
 
 Post-release
 ------------
 
-* Verify ``pip install pyiecwind`` resolves the new version.
+* When PyPI publishing is enabled: verify ``pip install pyiecwind`` resolves the
+  new version.
 * Verify the source URL in ``recipe/meta.yaml`` resolves and its ``sha256`` matches
   the published release archive.
 * Re-run this checklist if the tagged archive is re-cut for any reason.

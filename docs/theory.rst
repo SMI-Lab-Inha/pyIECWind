@@ -2,9 +2,10 @@ Theory
 ======
 
 This page documents the mathematical model behind every generated wind file.
-The equations follow IEC 61400-1 as implemented historically by NREL *IECWind*;
-each is paired with the function that implements it (:doc:`api`) and is locked by
-the corpus and oracle described in :doc:`validation`.
+The equations follow IEC 61400-1 as implemented historically by *IECWind* (from
+the National Laboratory of the Rockies, formerly NREL); each is paired with the
+function that implements it (:doc:`api`) and is locked by the corpus and oracle
+described in :doc:`validation`.
 
 Common quantities
 -----------------
@@ -184,9 +185,9 @@ Provenance and scope
 
 The equations above are implemented from the wind-condition definitions of
 IEC 61400-1, Clause 6 (external conditions / wind conditions), as historically
-realised by NREL *IECWind*. They are **re-derived independently** in this package
-rather than ported from the NREL source, and are cross-checked by the analytical
-oracle described in :doc:`validation`. No copyrighted IEC standard text is
+realised by *IECWind*. They are **re-derived independently** in this package
+rather than ported from the original source, and are cross-checked by the
+analytical oracle described in :doc:`validation`. No copyrighted IEC standard text is
 reproduced here; consult the standard itself for the normative definitions and
 the precise clause numbering, which differs between editions. ``iec_edition``
 selects only the normal power-law shear exponent (0.2 for Edition 1, 0.14 for
@@ -197,7 +198,9 @@ References
 
 * IEC 61400-1, *Wind turbines -- Part 1: Design requirements*, Clause 6 (Wind
   conditions), Editions 1 and 3. International Electrotechnical Commission.
-* B. J. Jonkman and M. L. Buhl Jr., *IECWind*, National Renewable Energy
-  Laboratory. https://www.nrel.gov/wind/nwtc/iecwind.html
-* OpenFAST *InflowWind* module documentation, National Renewable Energy
-  Laboratory. https://openfast.readthedocs.io/
+* M. L. Buhl Jr., *IECWind*, National Laboratory of the Rockies
+  (formerly the National Renewable Energy Laboratory).
+  https://www.nlr.gov/wind/nwtc/iecwind
+* OpenFAST *InflowWind* module documentation, National Laboratory of the Rockies
+  (formerly the National Renewable Energy Laboratory).
+  https://openfast.readthedocs.io/

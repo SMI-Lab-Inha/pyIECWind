@@ -23,4 +23,4 @@ It provides:
 - The package is pure Python and is intended to build as `noarch: python`
 - The runtime dependency surface is intentionally small: `python` and `numpy`
 - The package includes a console entry point `pyiecwind`
-- The current upstream release is `v0.1.0`
+- The current upstream release is `v0.1.1`
