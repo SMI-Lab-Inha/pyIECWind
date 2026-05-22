@@ -6,6 +6,7 @@ import re
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Protocol
 
 from .models import (
     CASE_PREFIXES,
@@ -62,6 +63,31 @@ FIELD_ALIASES = {
 
 def _normalize_key(raw: str) -> str:
     return raw.strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _assign_scalar_field(
+    fields: dict[str, str],
+    field_lines: dict[str, int],
+    key: str,
+    value: str,
+    *,
+    lineno: int,
+) -> None:
+    """Store a scalar field, rejecting a duplicate definition.
+
+    Each scalar field may appear at most once. Re-defining it -- directly or via a
+    different alias for the same field -- is an error rather than a silent
+    last-wins overwrite, which previously masked typos such as two conflicting
+    ``wtc`` lines.
+    """
+
+    if key in fields:
+        raise ValueError(
+            f"Duplicate field '{key}' on line {lineno}; it was already set on line "
+            f"{field_lines[key]}. Each scalar field may appear only once."
+        )
+    fields[key] = value
+    field_lines[key] = lineno
 
 
 _SI_TRUE_TOKENS = {"T", "TRUE", ".TRUE.", "YES", "Y", "SI", "METRIC", "1"}
@@ -327,6 +353,7 @@ def _parse_legacy_input_file(raw_lines: list[str], *, legacy: bool = False) -> I
 
 def _parse_keyed_input_file(raw_lines: list[str], *, legacy: bool = False) -> IECParameters:
     fields: dict[str, str] = {}
+    field_lines: dict[str, int] = {}
     conditions: list[str] = []
     in_conditions = False
 
@@ -366,13 +393,14 @@ def _parse_keyed_input_file(raw_lines: list[str], *, legacy: bool = False) -> IE
         if key in {"condition", "conditions"}:
             _append_condition_value(conditions, value, lineno=lineno)
         else:
-            fields[key] = value
+            _assign_scalar_field(fields, field_lines, key, value, lineno=lineno)
 
     return _finalize_parsed_fields(fields, conditions, legacy=legacy)
 
 
 def _parse_openfast_input_file(raw_lines: list[str], *, legacy: bool = False) -> IECParameters:
     fields: dict[str, str] = {}
+    field_lines: dict[str, int] = {}
     conditions: list[str] = []
     in_cases_section = False
 
@@ -409,16 +437,52 @@ def _parse_openfast_input_file(raw_lines: list[str], *, legacy: bool = False) ->
 
         if not value:
             raise ValueError(f"Missing value for '{key}' on line {lineno}.")
-        fields[key] = value
+        _assign_scalar_field(fields, field_lines, key, value, lineno=lineno)
 
     return _finalize_parsed_fields(fields, conditions, legacy=legacy)
+
+
+class _LayoutParser(Protocol):
+    def __call__(self, raw_lines: list[str], *, legacy: bool = ...) -> IECParameters: ...
+
+
+# A file may pin its layout with a ``! format: <id>`` comment directive (see
+# docs/data_sources.rst). When present it overrides auto-detection; aliases map
+# the short and versioned spellings onto the same layout parser.
+_FORMAT_PARSERS: dict[str, _LayoutParser] = {
+    "openfast-table-v1": _parse_openfast_input_file,
+    "openfast": _parse_openfast_input_file,
+    "keyed-v1": _parse_keyed_input_file,
+    "keyed": _parse_keyed_input_file,
+    "legacy-v1": _parse_legacy_input_file,
+    "legacy": _parse_legacy_input_file,
+}
+
+_FORMAT_DIRECTIVE = re.compile(r"^[!#]\s*format(?:_version)?\s*[:=]\s*(\S+)\s*$", re.IGNORECASE)
+
+
+def _detect_declared_format(raw_lines: list[str]) -> str | None:
+    """Return the layout id pinned by a ``! format: <id>`` directive, if any.
+
+    The directive is a comment line, so it is inert to every layout's own parser;
+    when it is absent the layout is auto-detected (the compatibility fallback).
+    """
+
+    for line in raw_lines:
+        match = _FORMAT_DIRECTIVE.match(line.strip())
+        if match:
+            return match.group(1).strip().lower()
+    return None
 
 
 def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: bool = False) -> IECParameters:
     """Read an input file and return validated :class:`IECParameters`.
 
     The OpenFAST-style table, keyed (``key = value``), and legacy positional
-    layouts are auto-detected.
+    layouts are auto-detected. A file may instead pin its layout explicitly with a
+    ``! format: <id>`` comment directive (``openfast-table-v1``, ``keyed-v1``, or
+    ``legacy-v1``); when present it overrides auto-detection. See
+    ``docs/data_sources.rst`` for the full Input Format v1 specification.
 
     Parameters
     ----------
@@ -440,8 +504,9 @@ def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: b
     FileNotFoundError
         If ``filepath`` does not exist.
     ValueError
-        For malformed input, an unknown key, an unrecognised ``si_unit`` token,
-        an out-of-range value, or (unless ``legacy=True``) an unsupported edition.
+        For malformed input, an unknown key, a duplicate scalar field, an
+        unrecognised ``si_unit`` token or ``format`` directive, an out-of-range
+        value, or (unless ``legacy=True``) an unsupported edition.
 
     Examples
     --------
@@ -456,7 +521,17 @@ def parse_input_file(filepath: str | Path = DEFAULT_INPUT_FILENAME, *, legacy: b
             f"Cannot find input file '{path}'. Ensure {DEFAULT_INPUT_FILENAME} is in the current working directory."
         )
 
-    raw_lines = path.read_text(encoding="utf-8").splitlines()
+    # Read with utf-8-sig so a leading byte-order mark (common in files saved by
+    # Windows editors such as Notepad) is stripped instead of corrupting line 1.
+    raw_lines = path.read_text(encoding="utf-8-sig").splitlines()
+
+    declared = _detect_declared_format(raw_lines)
+    if declared is not None:
+        parser = _FORMAT_PARSERS.get(declared)
+        if parser is None:
+            supported = ", ".join(sorted(_FORMAT_PARSERS))
+            raise ValueError(f"Unknown format directive '{declared}'. Supported values: {supported}.")
+        return parser(raw_lines, legacy=legacy)
 
     keyed_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_ -]*\s*(=|:)\s*.*$")
     openfast_pattern = re.compile(r"^\S+\s{2,}[A-Za-z_][A-Za-z0-9_ -]*\s*(?:\s+-.*)?$")

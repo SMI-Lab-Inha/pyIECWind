@@ -4,6 +4,49 @@ All notable changes to `pyIECWind` will be documented in this file.
 
 The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
+## [0.2.0] - 2026-05-22
+
+Input-contract and CLI hardening. No changes to the numeric `.wnd` output of any
+valid case. Note the changed CLI default below: `pyiecwind run` now fails closed.
+
+### Added
+
+- Atomic generation: `generate_all(..., atomic=True)` (and the matching
+  `generate_from_input_file(..., atomic=True)`) stage every file in a temporary
+  directory and only commit them once the whole batch has been generated, so a
+  mid-batch failure under `strict=True` leaves no partial output behind.
+- Optional `! format: <id>` input directive (`openfast-table-v1`, `keyed-v1`,
+  `legacy-v1`) that pins the layout and overrides auto-detection; auto-detection
+  is now the documented compatibility fallback. Emitted files (template, wizard)
+  carry the directive so they are self-describing.
+- A formal **Input Format v1** specification in the documentation (lexical rules,
+  duplicate-field policy, condition-code grammar, unit semantics, and
+  invalid-file examples), and a per-family traceability table in the theory page
+  mapping each equation to its code, oracle test, and golden scenarios.
+
+### Changed
+
+- The `run` command (and the no-argument default) now fail closed by default:
+  an unparseable input or invalid condition aborts with a clean message and
+  writes no files (atomic + strict). The existing `--continue-on-error` flag now
+  selects the previous lenient behaviour (generate the valid conditions, skip and
+  report the rest). The interactive wizard also fails closed.
+- Input parsers reject a scalar field defined more than once (directly or via an
+  alias), reporting both line numbers, instead of silently keeping the last
+  value.
+- Development status classifier moved from Alpha to Beta now that the input
+  contract and release-package contents are settled.
+- The golden corpus stores its version stamp in masked form (`pyIECWind vX`), so
+  it is version-independent and no longer needs regenerating after a release bump.
+
+### Fixed
+
+- Input files are read with `utf-8-sig`, so a leading byte-order mark (common in
+  files saved by Windows editors) no longer corrupts the first line.
+- A repeated condition code (it maps to the same `.wnd` file) is now generated
+  once instead of being staged twice, which previously broke `atomic=True` with a
+  `FileNotFoundError` and left partial output behind.
+
 ## [0.1.2] - 2026-05-22
 
 Packaging, release-process, and documentation fixes. No changes to generated

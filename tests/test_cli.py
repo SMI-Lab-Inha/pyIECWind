@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import io
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
 from helpers import WorkspaceTestCaseMixin, openfast_case_table_text
@@ -56,6 +56,49 @@ class CLITests(WorkspaceTestCaseMixin, unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("Generated 2 wind file(s).", buffer.getvalue())
         self.assertTrue((output_dir / "EWM50.wnd").exists())
+
+    def _input_with_invalid_condition(self) -> str:
+        return openfast_case_table_text(
+            case_rows=[
+                "EWM             True   [50]                    - valid",
+                "EWS             True   [V+99.0]                - out of operating range",
+            ]
+        )
+
+    def test_main_run_fails_closed_on_invalid_condition(self) -> None:
+        tmp = self.workspace_tempdir()
+        input_file = tmp / "input.ipt"
+        output_dir = tmp / "out"
+        input_file.write_text(self._input_with_invalid_condition(), encoding="utf-8")
+
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
+            result = main(["run", str(input_file), "-o", str(output_dir)])
+
+        self.assertEqual(result, 1)
+        self.assertIn("error:", err.getvalue())
+        self.assertIn("--continue-on-error", err.getvalue())
+        # Fail-closed and atomic: no files at all, not even the valid EWM50.
+        self.assertEqual(sorted(output_dir.glob("*.wnd")), [])
+
+    def test_main_run_continue_on_error_writes_valid_only(self) -> None:
+        tmp = self.workspace_tempdir()
+        input_file = tmp / "input.ipt"
+        output_dir = tmp / "out"
+        input_file.write_text(self._input_with_invalid_condition(), encoding="utf-8")
+
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            result = main(["run", str(input_file), "-o", str(output_dir), "--continue-on-error"])
+
+        self.assertEqual(result, 0)
+        self.assertTrue((output_dir / "EWM50.wnd").exists())
+        self.assertFalse((output_dir / "EWSV+99.0.wnd").exists())
+
+    def test_main_run_missing_input_file_fails_cleanly(self) -> None:
+        tmp = self.workspace_tempdir()
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
+            result = main(["run", str(tmp / "absent.ipt"), "-o", str(tmp / "out")])
+        self.assertEqual(result, 1)
+        self.assertIn("error:", err.getvalue())
 
     def test_main_wizard_generates_output_and_saved_input(self) -> None:
         tmp = self.workspace_tempdir()

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import math
+import os
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -601,16 +603,94 @@ _GENERATORS = {
 }
 
 
+def _ordered_unique(codes: tuple[str, ...]) -> list[str]:
+    """Return ``codes`` with duplicates removed, preserving first-seen order.
+
+    Each condition code maps to a single ``<code>.wnd`` file, so a repeated code
+    can only ever describe the same output. Generating it once keeps the result
+    count honest and -- crucially for ``atomic=True`` -- avoids staging the same
+    path twice and then failing to move it on the second commit pass.
+    """
+
+    return list(dict.fromkeys(codes))
+
+
+def _generate_one(
+    code: str,
+    params: IECParameters,
+    output_dir: str | Path | None,
+    *,
+    strict: bool,
+    generated: list[Path],
+    errors: list[GenerationError],
+) -> None:
+    """Generate one condition, honouring the strict/lenient policy.
+
+    Appends the written path to ``generated`` on success. On failure it re-raises
+    when ``strict`` is ``True`` and otherwise records a :class:`GenerationError`
+    in ``errors`` so the batch can continue.
+    """
+
+    generator = _GENERATORS.get(code[:3])
+    if generator is None:
+        message = f"Unknown condition type '{code[:3]}' in code '{code}'."
+        if strict:
+            raise ValueError(message)
+        errors.append(GenerationError(code, message))
+        return
+    try:
+        generated.append(generator(code, params, output_dir=output_dir))
+    except ValueError as exc:
+        if strict:
+            raise
+        errors.append(GenerationError(code, str(exc)))
+
+
+def _generate_all_atomic(
+    params: IECParameters,
+    output_dir: str | Path | None,
+    *,
+    strict: bool,
+) -> GenerationResult:
+    """All-or-nothing generation: stage every file, then commit by moving.
+
+    Files are written first into a staging directory created *inside* the final
+    output directory, so committing each file is a same-filesystem rename. The
+    move phase only runs once every condition has been generated, so a failure
+    partway through (under ``strict=True``) never leaves a partial batch behind.
+    """
+
+    final_dir = Path.cwd() if output_dir is None else Path(output_dir)
+    final_dir.mkdir(parents=True, exist_ok=True)
+
+    staged: list[Path] = []
+    errors: list[GenerationError] = []
+    generated: list[Path] = []
+    with tempfile.TemporaryDirectory(prefix=".pyiecwind-staging-", dir=final_dir) as staging:
+        staging_dir = Path(staging)
+        for code in _ordered_unique(params.conditions):
+            _generate_one(code, params, staging_dir, strict=strict, generated=staged, errors=errors)
+        # Reaching here means every condition was generated (or, under
+        # strict=False, recorded as an error). Now commit by moving into place.
+        for staged_path in staged:
+            destination = final_dir / staged_path.name
+            os.replace(staged_path, destination)
+            generated.append(destination)
+    return GenerationResult(tuple(generated), tuple(errors))
+
+
 def generate_all(
     params: IECParameters,
     output_dir: str | Path | None = None,
     *,
     strict: bool = True,
+    atomic: bool = False,
 ) -> GenerationResult:
     """Generate every condition listed in ``params``.
 
     Fails closed by default: the first invalid condition raises, so a caller
-    never silently receives partial output.
+    never silently receives partial output. Repeated condition codes describe the
+    same ``<code>.wnd`` file and are generated once (first-seen order preserved).
 
     Parameters
     ----------
@@ -623,6 +703,11 @@ def generate_all(
     strict : bool, default True
         If ``True``, raise :class:`ValueError` on the first condition that cannot
         be generated. If ``False``, collect failures into the result and continue.
+    atomic : bool, default False
+        If ``True``, stage all files in a temporary directory and only move them
+        into ``output_dir`` once the whole batch has been generated. Combined with
+        ``strict=True`` this is all-or-nothing: an invalid condition raises and
+        the output directory is left untouched, never partially populated.
 
     Returns
     -------
@@ -643,27 +728,18 @@ def generate_all(
     ...     hh=80.0, dia=80.0, vin=4.0, vrated=10.0, vout=24.0,
     ...     conditions=("EWM50", "NWP10.0"),
     ... )
-    >>> result = generate_all(params, output_dir="out")  # doctest: +SKIP
+    >>> result = generate_all(params, output_dir="out", atomic=True)  # doctest: +SKIP
     >>> result.count  # doctest: +SKIP
     2
     """
 
+    if atomic:
+        return _generate_all_atomic(params, output_dir, strict=strict)
+
     generated: list[Path] = []
     errors: list[GenerationError] = []
-    for code in params.conditions:
-        generator = _GENERATORS.get(code[:3])
-        if generator is None:
-            message = f"Unknown condition type '{code[:3]}' in code '{code}'."
-            if strict:
-                raise ValueError(message)
-            errors.append(GenerationError(code, message))
-            continue
-        try:
-            generated.append(generator(code, params, output_dir=output_dir))
-        except ValueError as exc:
-            if strict:
-                raise
-            errors.append(GenerationError(code, str(exc)))
+    for code in _ordered_unique(params.conditions):
+        _generate_one(code, params, output_dir, strict=strict, generated=generated, errors=errors)
     return GenerationResult(tuple(generated), tuple(errors))
 
 
@@ -672,6 +748,7 @@ def generate_from_input_file(
     *,
     output_dir: str | Path | None = None,
     strict: bool = True,
+    atomic: bool = False,
 ) -> tuple[IECParameters, GenerationResult]:
     """Parse ``input_file`` and generate all of its conditions.
 
@@ -686,6 +763,9 @@ def generate_from_input_file(
         Directory for the generated ``.wnd`` files (see :func:`generate_all`).
     strict : bool, default True
         Passed through to :func:`generate_all`; fails closed by default.
+    atomic : bool, default False
+        Passed through to :func:`generate_all`; when combined with ``strict``,
+        a single invalid condition leaves no files behind.
 
     Returns
     -------
@@ -700,4 +780,4 @@ def generate_from_input_file(
         For malformed input, or (when ``strict=True``) an invalid condition.
     """
     params = parse_input_file(input_file)
-    return params, generate_all(params, output_dir=output_dir, strict=strict)
+    return params, generate_all(params, output_dir=output_dir, strict=strict, atomic=atomic)
