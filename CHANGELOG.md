@@ -4,6 +4,31 @@ All notable changes to `pyIECWind` will be documented in this file.
 
 The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
+## [0.1.1] - 2026-05-22
+
+Documentation, provenance, and supply-chain hardening. No changes to generated
+`.wnd` output.
+
+### Added
+
+- `CITATION.cff` and a Read the Docs build configuration.
+- Provenance and citations (IEC 61400-1 Clause 6, NREL IECWind, OpenFAST
+  InflowWind) and a per-scenario reproducibility matrix in the documentation.
+- Machine-readable `--json` benchmark output with a documented threshold policy.
+- Supply-chain hardening: Dependabot, a `pip-audit` dependency-audit CI job, and a
+  release workflow with a build-provenance attestation and PyPI trusted publishing.
+
+### Changed
+
+- Documentation source is now pure ASCII (fixing em-dashes that rendered as
+  mojibake) and enforced by the docs test; the README is rebuilt as an academic
+  front door with a scope table, the tolerance policy, citations, and tempered
+  IECWind-compatibility claims.
+- Validation documentation is framed by evidential strength (golden regression vs
+  independent analytical oracle vs property tests vs not-yet-done external
+  comparison).
+- Public-API docstrings gained `Notes` sections with standard references.
+
 ## [0.1.0] - 2026-05-22
 
 First public release of `pyIECWind`: a typed, validated, and regression-locked

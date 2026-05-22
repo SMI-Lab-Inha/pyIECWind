@@ -4,6 +4,20 @@ Changelog
 The canonical changelog is ``CHANGELOG.md`` in the repository root; the notable
 entries are reproduced here.
 
+0.1.1 - 2026-05-22
+------------------
+
+Documentation, provenance, and supply-chain hardening. No changes to generated
+``.wnd`` output.
+
+* Added ``CITATION.cff``, a Read the Docs configuration, provenance/citations,
+  and a reproducibility matrix.
+* Documentation source is now pure ASCII, enforced by the docs test; the README
+  is rebuilt as an academic front door with tempered IECWind-compatibility claims.
+* Machine-readable ``--json`` benchmark output with a documented threshold policy.
+* Supply-chain hardening: Dependabot, a ``pip-audit`` CI job, and a release
+  workflow (build-provenance attestation + PyPI trusted publishing).
+
 0.1.0 - 2026-05-22
 ------------------
 

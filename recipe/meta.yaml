@@ -1,5 +1,5 @@
 {% set name = "pyiecwind" %}
-{% set version = "0.1.0" %}
+{% set version = "0.1.1" %}
 {% set python_min = "3.10" %}
 
 package:
@@ -8,7 +8,8 @@ package:
 
 source:
   url: https://github.com/SMI-Lab-Inha/pyIECWind/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: acaf61d54fe79f589bfe5d4372bbb380d4d83812c07971245b66681ff7f2f6a6
+  # PLACEHOLDER sha256 - recompute from the v0.1.1 tag archive (see docs/deployment.rst).
+  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
 
 build:
   noarch: python
