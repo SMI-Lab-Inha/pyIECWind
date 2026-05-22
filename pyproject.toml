@@ -38,6 +38,7 @@ dev = [
   "ruff>=0.4",
   "mypy>=1.8",
   "build>=1.0",
+  "twine>=5.0",
 ]
 docs = [
   "sphinx>=7.0",
