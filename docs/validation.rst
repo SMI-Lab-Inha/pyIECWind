@@ -2,9 +2,10 @@ Validation
 ==========
 
 ``pyIECWind`` implements the IEC 61400-1 wind-condition models historically
-provided by NREL *IECWind*. Numeric output is protected by layers of **differing
-evidential strength**, and it is important to be precise about what each one does
-and does not establish:
+provided by *IECWind* (from the National Laboratory of the Rockies, formerly
+NREL). Numeric output is protected by layers of **differing evidential
+strength**, and it is important to be precise about what each one does and does
+not establish:
 
 #. **Golden regression** -- self-generated; detects *regressions*, not
    original-formulation errors.

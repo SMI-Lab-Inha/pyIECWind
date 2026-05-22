@@ -4,8 +4,9 @@ title: "pyIECWind: IEC 61400-1 wind-condition file generation for OpenFAST Inflo
 abstract: >-
   pyIECWind generates IEC 61400-1 wind-condition (.wnd) files for the OpenFAST
   InflowWind module, implementing the wind-condition models historically provided
-  by NREL IECWind behind a typed, validated, and regression-locked Python API and
-  command-line interface.
+  by the IECWind tool from the National Laboratory of the Rockies (formerly the
+  National Renewable Energy Laboratory) behind a typed, validated, and
+  regression-locked Python API and command-line interface.
 type: software
 authors:
   - family-names: Seo

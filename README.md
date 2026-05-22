@@ -8,11 +8,12 @@
 
 `pyIECWind` generates IEC 61400-1 wind-condition `.wnd` files for the OpenFAST
 *InflowWind* module. It implements the IEC 61400-1 wind-condition models
-historically provided by NREL's *IECWind* tool, behind a typed, validated, and
-regression-locked Python API and command-line interface.
+historically provided by the *IECWind* tool from the National Laboratory of the
+Rockies (formerly the National Renewable Energy Laboratory, NREL), behind a
+typed, validated, and regression-locked Python API and command-line interface.
 
 It targets compatibility with selected legacy *IECWind*-style workflows. It has
-**not** been validated byte-for-byte against NREL *IECWind* output; see
+**not** been validated byte-for-byte against legacy *IECWind* output; see
 [Validation](#validation) for the exact strength of the current evidence.
 
 ## Installation
@@ -93,7 +94,7 @@ per-scenario reproducibility matrix in [docs/validation.rst](docs/validation.rst
 **Tolerance policy:** header/comment lines are compared exactly (version stamp
 masked); numeric data rows are compared column-by-column within +/- 5e-4, half of
 the rendered three-decimal precision. **No external byte-for-byte comparison
-against NREL IECWind binaries has been performed**; such an external reference
+against legacy IECWind binaries has been performed**; such an external reference
 layer is future work.
 
 ## Documentation
@@ -124,8 +125,10 @@ file under *Cite this repository*.
 ## References
 
 - IEC 61400-1, *Wind turbines - Part 1: Design requirements* (Editions 1 and 3).
-- B. J. Jonkman and M. L. Buhl, *IECWind*, National Renewable Energy Laboratory.
-- OpenFAST *InflowWind* module documentation, National Renewable Energy Laboratory.
+- B. J. Jonkman and M. L. Buhl, *IECWind*, National Laboratory of the Rockies
+  (formerly the National Renewable Energy Laboratory).
+- OpenFAST *InflowWind* module documentation, National Laboratory of the Rockies
+  (formerly the National Renewable Energy Laboratory).
 
 See [docs/theory.rst](docs/theory.rst) for the equations and their mapping to the
 implementation.

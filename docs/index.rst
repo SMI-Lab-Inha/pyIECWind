@@ -2,9 +2,11 @@ pyIECWind
 =========
 
 ``pyIECWind`` generates IEC 61400-1 wind-condition ``.wnd`` files for the
-OpenFAST *InflowWind* module. It reproduces the wind-condition models of the
-legacy NREL *IECWind* tool behind a typed, validated Python API, a reproducible
-command-line interface, and a regression-locked test suite.
+OpenFAST *InflowWind* module. It implements the IEC 61400-1 wind-condition models
+historically provided by the legacy *IECWind* tool from the National Laboratory of
+the Rockies (formerly the National Renewable Energy Laboratory, NREL), behind a
+typed, validated Python API, a reproducible command-line interface, and a
+regression-locked test suite.
 
 It implements the six classical condition families - ECD, EWS, EOG, EDC, NWP,
 and EWM - across both SI and English unit systems and IEC 61400-1 Editions 1
