@@ -86,7 +86,9 @@ jobs:
           python -m pip install -e . pip-audit
 
       - name: Audit dependencies for known vulnerabilities
-        run: pip-audit --strict
+        # --skip-editable: skip the local (editable) pyiecwind package, which is
+        # not on PyPI; audit its real dependencies strictly.
+        run: pip-audit --strict --skip-editable
 
   docs:
     name: Build documentation
