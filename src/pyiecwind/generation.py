@@ -603,6 +603,18 @@ _GENERATORS = {
 }
 
 
+def _ordered_unique(codes: tuple[str, ...]) -> list[str]:
+    """Return ``codes`` with duplicates removed, preserving first-seen order.
+
+    Each condition code maps to a single ``<code>.wnd`` file, so a repeated code
+    can only ever describe the same output. Generating it once keeps the result
+    count honest and -- crucially for ``atomic=True`` -- avoids staging the same
+    path twice and then failing to move it on the second commit pass.
+    """
+
+    return list(dict.fromkeys(codes))
+
+
 def _generate_one(
     code: str,
     params: IECParameters,
@@ -656,7 +668,7 @@ def _generate_all_atomic(
     generated: list[Path] = []
     with tempfile.TemporaryDirectory(prefix=".pyiecwind-staging-", dir=final_dir) as staging:
         staging_dir = Path(staging)
-        for code in params.conditions:
+        for code in _ordered_unique(params.conditions):
             _generate_one(code, params, staging_dir, strict=strict, generated=staged, errors=errors)
         # Reaching here means every condition was generated (or, under
         # strict=False, recorded as an error). Now commit by moving into place.
@@ -677,7 +689,8 @@ def generate_all(
     """Generate every condition listed in ``params``.
 
     Fails closed by default: the first invalid condition raises, so a caller
-    never silently receives partial output.
+    never silently receives partial output. Repeated condition codes describe the
+    same ``<code>.wnd`` file and are generated once (first-seen order preserved).
 
     Parameters
     ----------
@@ -725,7 +738,7 @@ def generate_all(
 
     generated: list[Path] = []
     errors: list[GenerationError] = []
-    for code in params.conditions:
+    for code in _ordered_unique(params.conditions):
         _generate_one(code, params, output_dir, strict=strict, generated=generated, errors=errors)
     return GenerationResult(tuple(generated), tuple(errors))
 

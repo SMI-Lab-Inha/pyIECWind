@@ -43,6 +43,9 @@ valid case.
 
 - Input files are read with `utf-8-sig`, so a leading byte-order mark (common in
   files saved by Windows editors) no longer corrupts the first line.
+- A repeated condition code (it maps to the same `.wnd` file) is now generated
+  once instead of being staged twice, which previously broke `atomic=True` with a
+  `FileNotFoundError` and left partial output behind.
 
 ## [0.1.2] - 2026-05-22
 

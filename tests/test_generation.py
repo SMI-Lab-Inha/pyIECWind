@@ -190,3 +190,23 @@ class AtomicGenerationTests(WorkspaceTestCaseMixin, unittest.TestCase):
         self.assertTrue((out / "EWM50.wnd").exists())
         self.assertTrue((out / "NWP10.0.wnd").exists())
         self.assertEqual([entry for entry in out.iterdir() if entry.is_dir()], [])
+
+    def test_atomic_handles_repeated_condition_codes(self) -> None:
+        # A repeated code maps to the same file; atomic mode must generate it once
+        # rather than staging it twice and failing on the second commit.
+        out = self.workspace_tempdir() / "out"
+        params = default_parameters(conditions=["EWM50", "NWP10.0", "EWM50"])
+
+        result = generate_all(params, output_dir=out, strict=True, atomic=True)
+
+        self.assertEqual(result.count, 2)
+        self.assertEqual(sorted(p.name for p in out.glob("*.wnd")), ["EWM50.wnd", "NWP10.0.wnd"])
+
+    def test_non_atomic_dedupes_repeated_condition_codes(self) -> None:
+        out = self.workspace_tempdir() / "out"
+        params = default_parameters(conditions=["EWM50", "EWM50"])
+
+        result = generate_all(params, output_dir=out, strict=True, atomic=False)
+
+        self.assertEqual(result.count, 1)
+        self.assertEqual([p.name for p in out.glob("*.wnd")], ["EWM50.wnd"])
