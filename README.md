@@ -1,6 +1,7 @@
 # pyIECWind
 
 [![CI](https://github.com/SMI-Lab-Inha/pyIECWind/actions/workflows/ci.yml/badge.svg)](https://github.com/SMI-Lab-Inha/pyIECWind/actions/workflows/ci.yml)
+[![Docs](https://readthedocs.org/projects/pyiecwind/badge/?version=latest)](https://pyiecwind.readthedocs.io/en/latest/)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![OpenFAST](https://img.shields.io/badge/OpenFAST-InflowWind-0A7E8C)
@@ -67,7 +68,9 @@ See [Quickstart](docs/quickstart.rst) for more.
 
 ## Documentation
 
-The full documentation is in [`docs/`](docs/) and builds with Sphinx
+The full documentation is hosted at
+[pyiecwind.readthedocs.io](https://pyiecwind.readthedocs.io/en/latest/). The
+source is in [`docs/`](docs/) and builds with Sphinx
 (`sphinx-build -W -b html docs docs/_build/html`). Key references:
 
 - [Theory](docs/theory.rst) — the IEC equations behind each case family
