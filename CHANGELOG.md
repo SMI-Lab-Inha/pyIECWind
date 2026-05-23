@@ -4,7 +4,7 @@ All notable changes to `pyIECWind` will be documented in this file.
 
 The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
-## [Unreleased]
+## [0.2.1] - 2026-05-23
 
 ### Added
 
