@@ -13,8 +13,8 @@ authors:
     given-names: Jae Hoon
     affiliation: "SMI Lab, Inha University"
     # orcid: "https://orcid.org/0000-0000-0000-0000"  # add when available
-version: "0.2.0"
-date-released: "2026-05-22"
+version: "0.2.1"
+date-released: "2026-05-23"
 license: MIT
 repository-code: "https://github.com/SMI-Lab-Inha/pyIECWind"
 url: "https://github.com/SMI-Lab-Inha/pyIECWind"
