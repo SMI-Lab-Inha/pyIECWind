@@ -4,6 +4,15 @@ All notable changes to `pyIECWind` will be documented in this file.
 
 The format is inspired by Keep a Changelog, adapted to the needs of this project.
 
+## [Unreleased]
+
+### Added
+
+- A version-consistency guard: the test suite now fails if `CITATION.cff`'s
+  `version` drifts from the installed package version, and checks that its
+  `date-released` is a valid ISO (`YYYY-MM-DD`) date. The citation metadata is
+  hand-maintained, so this prevents it from silently falling behind a release.
+
 ## [0.2.0] - 2026-05-22
 
 Input-contract and CLI hardening. No changes to the numeric `.wnd` output of any
